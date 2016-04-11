@@ -1,8 +1,0 @@
-#!/bin/bash
-
-mkdir -p urls
-
-scrapy runspider investigation.py
-scrapy runspider honor.py
-scrapy runspider admiration.py
-scrapy runspider experience.py
