@@ -1,6 +1,5 @@
+import nltk
 import MySQLdb
-
-from _mysql_exceptions import OperationalError
 
 class canvas:
 
@@ -112,45 +111,19 @@ class canvas:
 
 		return artists
 
-	def get_albums(self):
-
-		canvas, brush = self.prepare()
-
-		brush.execute("select title from albums")
-
-		albums = [item[0] for item in brush.fetchall()]
-
-		canvas.close()
-
-		return albums
-
 	def get_songs(self):
 
 		canvas, brush = self.prepare()
 
-		brush.execute("select title from songs")
+		brush.execute("select title, lyrics from songs")
 
-		songs = [item[0] for item in brush.fetchall()]
+		songs = ((item[0], item[1]) for item in brush.fetchall())
 
 		canvas.close()
 
 		return songs
 
-	def get_lyrics(self):
-
-		canvas, brush = self.prepare()
-
-		brush.execute("select lyrics from songs")
-
-		lyrics = [item[0] for item in brush.fetchall()]
-
-		canvas.close()
-
-		return lyrics
-
 class text:
-
-	import nltk
 
 	canvas = canvas()
 
@@ -162,23 +135,27 @@ class text:
 		mind.execute("create database text")
 		text.close()
 
-	except: text.close()
+	except: 
 
-	def __init__(self):
-
-		# sketch the outline
-		text, mind = self.prepare()
-
-		mind.execute("""create table if not exists tokens (
-									  
-				       token varchar(255) not null, 	  
-
-				       occurences int not null,
-	  
-				       primary key (token) 	
-				       			  
-				       )""")
+		mind.execute("drop database text")
+		mind.execute("create database text")
 		text.close()
+
+	def __init__(self): pass
+
+#		# sketch the outline
+#		text, mind = self.prepare()
+#
+#		mind.execute("""create table if not exists tokens (
+#									  
+#				       token varchar(255) not null, 	  
+#
+#				       occurences int not null,
+#	  
+#				       primary key (token) 	
+#				       			  
+#				       )""")
+#		text.close()
 
 	def prepare(self):
 
@@ -190,20 +167,19 @@ class text:
 	def set_work(self): 
 
 		# get the work form the canvas
-		canvas, brush = self.canvas.prepare()
-
-		brush.execute("select title, lyrics from songs")
-
-		song_data = ((item[0], item[1]) for item in brush.fetchall())
-
-		canvas.close()
+		songs = self.canvas.get_songs()
 
 		# interpret it
 		text, mind = self.prepare()
 
-		for song, lyrics in song_data:
+		count  = int()
+		errors = int()
 
-			print song
+		for title, lyrics in songs:
+
+			print
+			print count, title
+			print
 
 			try:
 
@@ -213,22 +189,36 @@ class text:
 										       
 						       token varchar(255) not null,
 
+						       pos varchar(255) not null,
+
 						       primary key (id)
 						       
-						       )""", [song])
+						       )""", [title])
 
-				for token in self.nltk.word_tokenize(lyrics.decode('utf-8')): 
+				ID = int()
+
+				for token, pos in nltk.pos_tag(nltk.word_tokenize(lyrics)): 
+
+					ID += 1
 					
-					mind.execute("""insert into `%s` (token) 
-							       values (%s) 
-							       """, [song, token])
+					print '\t', ID, token, pos
+					
+					mind.execute("""insert into `%s` (token, pos) 
+							       values (%s, %s) 
+							       """, [title, token, pos])
 
-					mind.execute("""insert into tokens (token, occurences)
-							       values (%s, %d)
-							       on duplicate key update 
-							       occurences = occurences+1
-							       """, [token, 1]) 
+#					mind.execute("""insert into tokens (token, occurences)
+#							       values (%s, %d)
+#							       on duplicate key update 
+#							       occurences = occurences+1
+#							       """, [token, 1]) 
 
-			except: continue
+			except: errors += 1
+
+			count += 1
+
+		print
+
+		print "%d errors" % count
 
 		text.close()
