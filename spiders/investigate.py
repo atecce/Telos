@@ -1,30 +1,6 @@
 #!/usr/bin/env python
-#import time
+
 import scrapy
-
-#def multitask(self, processes, process_target, process_args):
-def multitask(self, process_target, process_args):
-
-	# don't wait for your neighbors
-	import multiprocessing
-
-	# and focus
-	branching_factor = 8
-
-	# start
-	process = multiprocessing.Process(target=process_target, args=process_args)
-	process.start()
-
-#	# keep track of your progress
-#	processes.append(process)
-#	alive = [process for process in processes if process.is_alive()]
-#
-#	# don't overextend
-#	while len(alive) >= branching_factor:
-#
-#		# pace yourself
-#		alive = [process for process in processes if process.is_alive()]
-#		time.sleep(1)
 
 class investigation(scrapy.Spider):
 
