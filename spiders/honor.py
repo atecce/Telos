@@ -4,30 +4,26 @@
 # But, if possible, to stimulate someone to thoughts of their own.
 #
 
-from twisted.internet import protocol, reactor
-
 import os
 import scrapy
 
-class investigation(scrapy.Spider):
-
-	name = 'investigation'
-
-	start_urls = [
-
-		"http://www.lyrics.net/"
-	]
-
-	def parse(self, response):
-
-		# extract alphabet urls
-		for suburl in response.xpath("//div[@id='page-letter-search']//@href").re("^/artists/[A-Z0]$"): 
-
-			print suburl
-
-			command = "scrapy", "runspider", "honor.py", "-a", "start_url="+response.urljoin(suburl)
-
-			reactor.spawnProcess(protocol.ProcessProtocol(), command[0], command)
+#class investigation(scrapy.Spider):
+#
+#	name = 'investigation'
+#
+#	start_urls = [
+#
+#		"http://www.lyrics.net/"
+#	]
+#
+#	def parse(self, response):
+#
+#		# extract alphabet urls
+#		for suburl in response.xpath("//div[@id='page-letter-search']//@href").re("^/artists/[A-Z0]$"): 
+#
+#			print suburl
+#
+#			os.system("scrapy runspider honor -a start_url=" + response.urljoin(suburl))
 
 #		# extract artist tags
 #		artist_tags = (trace.strong.a 		  		     		  \
@@ -49,23 +45,23 @@ class investigation(scrapy.Spider):
 #			if not caught_up: continue
 #
 #			self.multitask('artists', self.honor, artist_name, (artist_name, artist_url,))
-#
-#class honor(scrapy.Spider):
-#
-#	name = 'honor'
-#
-#	def __init__(self, *args, **kwargs):
-#
-#		super(honor, self).__init__(*args, **kwargs)
-#
-#		self.start_urls = [kwargs.get('start_url')]
-#
-#	def parse(self, response):
-#
-#		for suburl in response.xpath("//tr//@href").extract(): 
-#
-#			print '\t', suburl
-#
+
+class honor(scrapy.Spider):
+
+	name = 'honor'
+
+	def __init__(self, *args, **kwargs):
+
+		super(honor, self).__init__(*args, **kwargs)
+
+		self.start_urls = [kwargs.get('start_url')]
+
+	def parse(self, response):
+
+		for suburl in response.xpath("//tr//@href").extract(): 
+
+			print '\t', suburl
+
 #			yield scrapy.Request(response.urljoin(suburl), self.admire)
 
 #	def honor(self, artist_name, artist_url):
