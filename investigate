@@ -12,7 +12,6 @@ import time
 
 # set the canvas
 from db import canvas
-canvas = canvas()
 
 class lyrics_site:	
 
@@ -67,6 +66,8 @@ class lyrics_net(lyrics_site):
 	# know where you are
 	url = 'http://www.lyrics.net/'
 
+	canvas = canvas("lyrics_net")
+
 	def investigate(self):
 
 		# need this for interpretation
@@ -75,7 +76,7 @@ class lyrics_net(lyrics_site):
 		# try not to repeat yourself
 		try:
 
-			last_artist = canvas.get_artists()[-20]
+			last_artist = self.canvas.get_artists()[-20]
 			caught_up = bool()
 
 		# make sure you've actually started
@@ -119,7 +120,7 @@ class lyrics_net(lyrics_site):
 		artist_soup = self.communicate(artist_url)
 
 		# add the artist to the canvas
-		canvas.add_artist(artist_name)
+		self.canvas.add_artist(artist_name)
 
 		# get the album labels
 		album_labels = artist_soup.find_all('h3', {'class': 'artist-album-label'})
@@ -150,7 +151,7 @@ class lyrics_net(lyrics_site):
 			return
 
 		# add the album to the canvas
-		canvas.add_album(artist_name, album_title)
+		self.canvas.add_album(artist_name, album_title)
 
 		# extract the song data
 		song_data = ((song_tag.a.text, self.url + song_tag.a.get('href'))  \
@@ -192,7 +193,7 @@ class lyrics_net(lyrics_site):
 		except IndexError: return
 
 		# add song to canvas
-		canvas.add_song(album_title, song_title, lyrics)
+		self.canvas.add_song(album_title, song_title, lyrics)
 
 if __name__ == '__main__':
 

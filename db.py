@@ -1,19 +1,20 @@
-import MySQLdb
+import sqlite3
 
 class canvas:
 
-	# set the canvas
-	canvas = MySQLdb.connect('localhost', 'root', charset='utf8')
-	brush  = canvas.cursor()
+	def __init__(self, name):
 
-	try: 
+		# set the canvas
+		self.name = name
+		canvas = sqlite3.connect(self.name)
+		brush  = canvas.cursor()
 
-		brush.execute("create database canvas")
-		canvas.close()
+		try: 
 
-	except: canvas.close()
+			brush.execute("create database ?", (self.name,))
+			canvas.close()
 
-	def __init__(self):
+		except: canvas.close()
 
 		# sketch the outline
 		canvas, brush = self.prepare()
@@ -46,7 +47,7 @@ class canvas:
 	def prepare(self):
 
 		# 
-		canvas = MySQLdb.connect('localhost', 'root', db='canvas', charset='utf8')
+		canvas = sqlite3.connect(self.name)
 		brush  = canvas.cursor()
 
 		return canvas, brush
@@ -55,9 +56,7 @@ class canvas:
 
 		canvas, brush = self.prepare()
 
-		brush.execute("""insert into artists (name) values (%s)
-				 on duplicate key update name=name""",
-				 [artist_name])
+		brush.execute("""insert or replace into artists (name) values (?)""", (artist_name,))
 
 		canvas.commit()
 		canvas.close()
@@ -66,9 +65,7 @@ class canvas:
 
 		canvas, brush = self.prepare()
 
-		brush.execute("""insert into albums (artist_name, title) values (%s, %s)
-				 on duplicate key update artist_name=artist_name, title=title""",
-				 [artist_name, album_title])
+		brush.execute("""insert or replace into albums (artist_name, title) values (?, ?)""", (artist_name, album_title))
 
 		canvas.commit()
 		canvas.close()
@@ -77,9 +74,7 @@ class canvas:
 
 		canvas, brush = self.prepare()
 
-		brush.execute("""insert into songs (album_title, title, lyrics) values (%s, %s, %s)
-				 on duplicate key update album_title=album_title, title=title, lyrics=lyrics""",
-				 [album_title, song_title, lyrics])
+		brush.execute("""insert or replace into songs (album_title, title, lyrics) values (?, ?, ?)""", (album_title, song_title, lyrics))
 
 		canvas.commit()
 		canvas.close()
