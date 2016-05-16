@@ -29,8 +29,6 @@ class lyrics_site:
         # never stop trying
         while True:
 
-            print "Trying...", url
-
             # make some soup
             try:
 
@@ -141,10 +139,6 @@ class lyrics_net(lyrics_site):
                     album_title = item.h3.a.text
                     album_url   = urljoin(self.url, item.h3.a.get('href'))
 
-                    print '\t', album_title
-                    print '\t', album_url
-                    print
-
                     # add the album to the canvas
                     self.canvas.add_album(artist_name, album_title)
 
@@ -179,13 +173,7 @@ class lyrics_net(lyrics_site):
         song_soup = self.communicate(song_url)
 
         # sometimes there's nothing to meditate on
-        try: 
-
-            lyrics = song_soup.find_all('pre', {'id': 'lyric-body-text'})[0].text
-
-            for line in lyrics.splitlines(): print '\t\t\t', line
-
-            print
+        try: lyrics = song_soup.find_all('pre', {'id': 'lyric-body-text'})[0].text
 
         except IndexError: return
 
