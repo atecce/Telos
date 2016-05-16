@@ -5,6 +5,7 @@
 #
 
 import sys
+from os import system
 from time import sleep
 import argparse
 import re
@@ -191,3 +192,5 @@ if __name__ == '__main__':
     # start the investigation
     investigation = lyrics_net()
     investigation.investigate(args.start)
+
+    system("sudo shutdown -h now")
