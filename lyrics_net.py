@@ -7,16 +7,16 @@
 import scrapy
 from db import canvas
 
-class investigation(scrapy.Spider):
+class lyrics_net(scrapy.Spider):
 
-    name = 'investigation'
+    name = "lyrics_net"
 
     start_urls = [
 
         "http://www.lyrics.net/"
     ]
 
-    canvas = canvas("lyrics_net")
+    canvas = canvas(name)
 
     def parse(self, response):
 
@@ -28,31 +28,27 @@ class investigation(scrapy.Spider):
 
     def parse_letter(self, response):
 
-        for artist in response.xpath("//tr//a/text()").extract(): 
-            
-            self.canvas.add_artist(artist)
+        for item in response.xpath("//tr//strong"):
 
-        for suburl in response.xpath("//tr//@href").extract(): 
-            
-            url = response.urljoin(suburl)
+		print item.xpath("//a/text()").extract()
+		print item.xpath("//@href").extract()
 
-            yield scrapy.Request(url, callback=self.parse_artist)
-
-    def parse_artist(self, response):
-
-        for item in response.xpath("//div"): print item
-
-#       # get the album items
-#        album_items = artist_soup.find_all('div', {'class': 'clearfix'})
+#        for artist in response.xpath("//tr//a/text()").extract(): 
+#            
+#            self.canvas.add_artist(artist)
 #
-#        # for each item
-#        for item in album_items: 
+#        for suburl in response.xpath("//tr//@href").extract(): 
+#            
+#            url = response.urljoin(suburl)
 #
-#            # check for a header
-#            if item.h3:
+#            yield scrapy.Request(url, callback=self.parse_artist)
 #
-#                # check the header contains a link
-#                if item.h3.a:
+#    def parse_artist(self, response):
+#
+#        for item in response.xpath("//div[@class='clearfix']//h3//a"): 
+#
+#		print item.xpath("text()").extract()
+#		print item.xpath("@href").extract()
 #
 #                    # set the album information
 #                    album_title = item.h3.a.text
