@@ -9,69 +9,66 @@ from db import canvas
 
 class lyrics_net(scrapy.Spider):
 
+    # spider attributes
     name = "lyrics_net"
+    start_urls = ["http://www.lyrics.net/"]
+    handle_httpstatus_list = [302]
 
-    start_urls = [
-
-        "http://www.lyrics.net/"
-    ]
-
+    # database
     canvas = canvas(name)
 
     def parse(self, response):
 
+        # go through letters
         for suburl in response.xpath("//div[@id='page-letter-search']//@href").re("^/artists/[A-Z0]$"): 
-
             url = response.urljoin(suburl+'/99999')
-
             yield scrapy.Request(url, callback=self.parse_letter)
 
     def parse_letter(self, response):
 
-        for item in response.xpath("//tr//strong"):
+        # go through artists
+        for suburl in response.xpath("//tr//@href").extract(): 
+            url = response.urljoin(suburl)
+            yield scrapy.Request(url, callback=self.parse_artist)
 
-		print item.xpath("//a/text()").extract()
-		print item.xpath("//@href").extract()
+    def parse_artist(self, response):
 
-#        for artist in response.xpath("//tr//a/text()").extract(): 
-#            
-#            self.canvas.add_artist(artist)
-#
-#        for suburl in response.xpath("//tr//@href").extract(): 
-#            
-#            url = response.urljoin(suburl)
-#
-#            yield scrapy.Request(url, callback=self.parse_artist)
-#
-#    def parse_artist(self, response):
-#
-#        for item in response.xpath("//div[@class='clearfix']//h3//a"): 
-#
-#		print item.xpath("text()").extract()
-#		print item.xpath("@href").extract()
-#
-#                    # set the album information
-#                    album_title = item.h3.a.text
-#                    album_url   = urljoin(self.url, item.h3.a.get('href'))
-#
-#                    if self.verbose:
-#
-#                        print '\t', album_title
-#                        print '\t', album_url
-#                        print
-#
-#                    # add the album to the canvas
-#                    self.canvas.add_album(artist_name, album_title)
-#
-#                    # get the soup
-#                    album_soup = self.communicate(album_url)
-#
+        # get artist name
+        artist_name = response.xpath("//div[@id='content-body']//h3//strong/text()").extract_first()
+        if artist_name == None: return # artist entry without any content
+        self.canvas.add_artist(artist_name)
+
+        # go through albums
+        for item in response.xpath("//div[@class='clearfix']//h3//a"): 
+            album_title = item.xpath("text()").extract_first()
+            album_url = response.urljoin(item.xpath("@href").extract_first())
+            self.canvas.add_album(artist_name, album_title)
+            yield scrapy.Request(album_url, callback=self.parse_album)
+                
+    def parse_album(self, response):
+
+        # TODO handle redirects
+        if response.status == 302: pass
+
+        else: 
+
+            # go through the songs
+            for item in response.xpath("//strong//a"): 
+                song_title = item.xpath("text()").extract_first()
+                song_url = response.urljoin(item.xpath("@href").extract_first())
+                yield scrapy.Request(song_url, callback=self.parse_song)
+
+    def parse_song(self, response):
+
+        print response.xpath("//h2[@id='lyric-title-text']/text()").extract_first()
+        print response.xpath("//pre[@id='lyric-body-text']/text()").extract_first()
+
 #                    # handle Dorothy (which do not return the proper status code)
 #                    if album_soup.find_all('body', {'id': 's4-page-homepage'}): 
 #
 #                        # extract the song data
 #                        song_data = ((trace.a.text, urljoin(self.url, trace.a.get('href'))) \
-#                                      for trace in item.find_all('tr') 	   		    \
+#                                      for trace in item.find_all('tr') 	   	     \
 #                                                if trace.a)
 #
 #                    # otherwise
@@ -79,7 +76,7 @@ class lyrics_net(scrapy.Spider):
 #
 #                        # extract the song data
 #                        song_data = ((song_tag.a.text, urljoin(self.url, song_tag.a.get('href'))) \
-#                                      for song_tag in album_soup.find_all('strong') 	   	  \
+#                                      for song_tag in album_soup.find_all('strong') 	   	   \
 #                                                   if song_tag.a)
 #
 #                    # for each song
