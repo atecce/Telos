@@ -36,14 +36,16 @@ class lyrics_net(scrapy.Spider):
         # get artist name
         artist_name = response.xpath("//div[@id='content-body']//h3//strong/text()").extract_first()
         if artist_name == None: return # artist entry without any content
-        self.canvas.add_artist(artist_name)
+        self.canvas.add_artist(artist_name) # add to db
 
         # go through albums
         for item in response.xpath("//div[@class='clearfix']//h3//a"): 
             album_title = item.xpath("text()").extract_first()
             album_url = response.urljoin(item.xpath("@href").extract_first())
-            self.canvas.add_album(artist_name, album_title)
-            yield scrapy.Request(album_url, callback=self.parse_album)
+            self.canvas.add_album(artist_name, album_title) # add to db
+            request = scrapy.Request(album_url, callback=self.parse_album)
+            request.meta['album_title'] = album_title   # pass album title down
+            yield request
                 
     def parse_album(self, response):
 
@@ -54,14 +56,17 @@ class lyrics_net(scrapy.Spider):
 
             # go through the songs
             for item in response.xpath("//strong//a"): 
-                song_title = item.xpath("text()").extract_first()
                 song_url = response.urljoin(item.xpath("@href").extract_first())
-                yield scrapy.Request(song_url, callback=self.parse_song)
+                request = scrapy.Request(song_url, callback=self.parse_song)
+                request.meta['album_title'] = response.meta['album_title']  # pass album title down
+                yield request
 
     def parse_song(self, response):
 
-        print response.xpath("//h2[@id='lyric-title-text']/text()").extract_first()
-        print response.xpath("//pre[@id='lyric-body-text']/text()").extract_first()
+        # get song info
+        song_title = response.xpath("//h2[@id='lyric-title-text']/text()").extract_first()
+        lyrics = response.xpath("//pre[@id='lyric-body-text']/text()").extract_first()
+        self.canvas.add_song(response.meta['album_title'], song_title, lyrics)  # add to db
 
 #                    # handle Dorothy (which do not return the proper status code)
 #                    if album_soup.find_all('body', {'id': 's4-page-homepage'}): 
