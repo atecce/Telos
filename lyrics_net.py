@@ -29,7 +29,9 @@ class lyrics_net(scrapy.Spider):
         # go through artists
         for suburl in response.xpath("//tr//@href").extract(): 
             url = response.urljoin(suburl)
-            yield scrapy.Request(url, callback=self.parse_artist)
+            request = scrapy.Request(url, callback=self.parse_artist)
+            request.meta['artist_url'] = url # pass artist url down
+            yield request
 
     def parse_artist(self, response):
 
@@ -44,13 +46,19 @@ class lyrics_net(scrapy.Spider):
             album_url = response.urljoin(item.xpath("@href").extract_first())
             self.canvas.add_album(artist_name, album_title) # add to db
             request = scrapy.Request(album_url, callback=self.parse_album)
-            request.meta['album_title'] = album_title   # pass album title down
+            request.meta['artist_url'] = response.meta['artist_url'] # pass artist url down
+            request.meta['album_title'] = album_title # pass album title down
             yield request
                 
     def parse_album(self, response):
 
         # TODO handle redirects
-        if response.status == 302: pass
+        if response.status == 302: 
+            
+            # set artist url to backtrack
+            artist_url = response.request.headers.get('Referer')
+            request = scrapy.Request(artist_url, callback=self.handle_dorothy, dont_filter=True)
+            request.meta['album_title'] = response.meta['album_title']
 
         else: 
 
@@ -58,15 +66,37 @@ class lyrics_net(scrapy.Spider):
             for item in response.xpath("//strong//a"): 
                 song_url = response.urljoin(item.xpath("@href").extract_first())
                 request = scrapy.Request(song_url, callback=self.parse_song)
-                request.meta['album_title'] = response.meta['album_title']  # pass album title down
-                yield request
+                request.meta['album_title'] = response.meta['album_title'] # pass album title down
+
+        yield request
+
+    def handle_dorothy(self, response):
+
+        print
+        print response.meta['album_title']
+        print
+
+        for item in response.xpath("//div[@class='clearfix']"):
+
+            album_title = item.xpath("//h3[@class='artist-album-label']//a/text()").extract_first()
+
+            if response.meta['album_title'] == album_title:
+
+                print album_title 
+                print
+
+                for song_item in item.xpath("//tr"): print song_item
+
+                print
+
+        print
 
     def parse_song(self, response):
 
         # get song info
         song_title = response.xpath("//h2[@id='lyric-title-text']/text()").extract_first()
         lyrics = response.xpath("//pre[@id='lyric-body-text']/text()").extract_first()
-        self.canvas.add_song(response.meta['album_title'], song_title, lyrics)  # add to db
+        self.canvas.add_song(response.meta['album_title'], song_title, lyrics) # add to db
 
 #                    # handle Dorothy (which do not return the proper status code)
 #                    if album_soup.find_all('body', {'id': 's4-page-homepage'}): 
