@@ -76,18 +76,24 @@ class lyrics_net(scrapy.Spider):
         print response.meta['album_title']
         print
 
-        for item in response.xpath("//div[@class='clearfix']"):
+        for item in response.xpath("//tr"): print item
 
-            album_title = item.xpath("//h3[@class='artist-album-label']//a/text()").extract_first()
-
-            if response.meta['album_title'] == album_title:
-
-                print album_title 
-                print
-
-                for song_item in item.xpath("//tr"): print song_item
-
-                print
+#        album_items = response.xpath("//div[@class='clearfix']") #//h3[@class='artist-album-label']//a/text()").extract():
+#
+#        print album_items.xpath("//h3[@class='artist-album-label']//a")
+#
+#        for album_item in album_items.xpath("//h3[@class='artist-album-label']//a"):
+#
+#            print album_item
+#
+#            if response.meta['album_title'] == album_title:
+#
+#                print album_title 
+#                print
+#
+#                for song_item in item.xpath("//tr"): print song_item
+#
+#                print
 
         print
 
