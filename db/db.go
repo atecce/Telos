@@ -39,7 +39,7 @@ func InitiateDB(name string) *sql.DB {
 
 	// catch error
 	if err != nil {
-		log.Println("Failed to create tables:", err)
+		log.Println("ERROR Failed to create tables:", err)
 	}
 
 	return canvas
@@ -58,7 +58,7 @@ func AddArtist(artistName string, canvas *sql.DB) {
 
 	// catch error
 	if err != nil {
-		log.Println("Failed to add artist", artistName+":", err)
+		log.Println("ERROR Failed to add artist", artistName+":", err)
 	}
 }
 
@@ -75,7 +75,7 @@ func AddAlbum(artistName, albumTitle string, canvas *sql.DB) {
 
 	// catch error
 	if err != nil {
-		log.Println("Failed to add album", albumTitle, "by", artistName+":", err)
+		log.Println("ERROR Failed to add album", albumTitle, "by", artistName+":", err)
 	}
 }
 
@@ -92,7 +92,7 @@ func AddSong(albumTitle, songTitle, lyrics string, canvas *sql.DB) {
 		// catch error
 		if err != nil {
 			failed = true
-			log.Println("Error in .Begin: Failed to add song", songTitle, "in album", albumTitle+":", err)
+			log.Println("ERROR .Begin: Failed to add song", songTitle, "in album", albumTitle+":", err)
 			time.Sleep(time.Second)
 			canvas.Close()
 			continue
@@ -104,7 +104,7 @@ func AddSong(albumTitle, songTitle, lyrics string, canvas *sql.DB) {
 		// catch error
 		if err != nil {
 			failed = true
-			log.Println("Error in .Prepare: Failed to add song", songTitle, "in album", albumTitle+":", err)
+			log.Println("ERROR .Prepare: Failed to add song", songTitle, "in album", albumTitle+":", err)
 			time.Sleep(time.Second)
 			canvas.Close()
 			continue
@@ -119,7 +119,7 @@ func AddSong(albumTitle, songTitle, lyrics string, canvas *sql.DB) {
 		// catch error
 		if err != nil {
 			failed = true
-			log.Println("Error in .Exec: Failed to add song", songTitle, "in album", albumTitle+":", err)
+			log.Println("ERROR .Exec: Failed to add song", songTitle, "in album", albumTitle+":", err)
 			time.Sleep(time.Second)
 			canvas.Close()
 			continue
@@ -130,7 +130,7 @@ func AddSong(albumTitle, songTitle, lyrics string, canvas *sql.DB) {
 
 		// notify that a previous failure was cleaned up
 		if failed {
-			log.Println("Successfully added song", songTitle, "in album", albumTitle)
+			log.Println("INFO Successfully added song", songTitle, "in album", albumTitle)
 		}
 
 		// exit
