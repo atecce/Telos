@@ -2,14 +2,14 @@ package lyricsdotnet
 
 import (
 	"database/sql"
-	"fmt"
-	"investigations/db"
 	"io"
 	"log"
 	"net/http"
 	"regexp"
 	"sync"
 	"time"
+
+	"github.com/atecce/investigations/db"
 
 	_ "github.com/mattn/go-sqlite3" // need this to declare sqlite3 pointer
 	"golang.org/x/net/html"
@@ -44,7 +44,7 @@ func communicate(url string) (bool, io.ReadCloser) {
 		}
 
 		// write status to output
-		fmt.Println(time.Now(), url, resp.Status)
+		log.Println("INFO", url, resp.Status)
 
 		// check status codes
 		switch resp.StatusCode {
