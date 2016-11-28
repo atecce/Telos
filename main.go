@@ -10,7 +10,10 @@ import (
 	"golang.org/x/net/html"
 )
 
-const initialURL = "/w/index.php?title=Special:AllPages&hideredirects=1"
+const (
+	rootURL    = "https://en.wikipedia.org"
+	initialURL = "/w/index.php?title=Special:AllPages&hideredirects=1"
+)
 
 type Page struct {
 	root *html.Node
@@ -29,7 +32,7 @@ func (p *Page) investigate() {
 		p.wg.Add(1)
 		go func(page *html.Node) {
 			if page.FirstChild != nil {
-				_, _ = http.Get("https://en.wikipedia.org" + scrape.Attr(page, "href"))
+				_, _ = http.Get(rootURL + scrape.Attr(page, "href"))
 				log.Println("\t", scrape.Attr(page, "href"), page.FirstChild.Data)
 			}
 			p.wg.Done()
@@ -61,7 +64,7 @@ func (p *Page) next() *Page {
 func newPage(subURL string) *Page {
 
 	// make request
-	resp, err := http.Get("https://en.wikipedia.org" + subURL)
+	resp, err := http.Get(rootURL + subURL)
 	if err != nil {
 		panic(err)
 	}
