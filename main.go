@@ -15,12 +15,12 @@ const (
 	initialURL = "/w/index.php?title=Special:AllPages&hideredirects=1"
 )
 
-type Page struct {
+type NavPage struct {
 	root *html.Node
 	wg   sync.WaitGroup
 }
 
-func (p *Page) investigate() {
+func (p *NavPage) investigate() {
 
 	// find all pages with content
 	contentPages := scrape.FindAll(p.root, func(n *html.Node) bool {
@@ -43,7 +43,7 @@ func (p *Page) investigate() {
 	p.wg.Wait()
 }
 
-func (p *Page) next() *Page {
+func (p *NavPage) next() *NavPage {
 
 	// attempt to find element with next page link
 	nextPage, ok := scrape.Find(p.root, func(n *html.Node) bool {
@@ -56,12 +56,12 @@ func (p *Page) next() *Page {
 	// return the link if found otherwise return nil
 	if ok {
 		log.Println(scrape.Attr(nextPage, "href"))
-		return newPage(scrape.Attr(nextPage, "href"))
+		return newNavPage(scrape.Attr(nextPage, "href"))
 	}
 	return nil
 }
 
-func newPage(subURL string) *Page {
+func newNavPage(subURL string) *NavPage {
 
 	// make request
 	resp, err := http.Get(rootURL + subURL)
@@ -71,7 +71,7 @@ func newPage(subURL string) *Page {
 	defer resp.Body.Close()
 
 	// construct new page
-	p := new(Page)
+	p := new(NavPage)
 	p.root, err = html.Parse(resp.Body)
 	if err != nil {
 		panic(err)
@@ -82,7 +82,7 @@ func newPage(subURL string) *Page {
 func main() {
 
 	// singly linked list
-	for p := newPage(initialURL); p != nil; p = p.next() {
+	for p := newNavPage(initialURL); p != nil; p = p.next() {
 		p.investigate()
 	}
 }
