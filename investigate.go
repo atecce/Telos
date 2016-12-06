@@ -1,8 +1,9 @@
 package main
 
 import (
-	"investigations/lyrics_net"
 	"flag"
+
+	"github.com/atecce/investigations/lyrics_net"
 )
 
 func main() {
