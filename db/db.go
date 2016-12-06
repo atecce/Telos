@@ -94,7 +94,6 @@ func AddSong(album_title, song_title, lyrics string, canvas *sql.DB) {
 			failed = true
 			log.Println("Error in .Begin: Failed to add song", song_title, "in album", album_title+":", err)
 			time.Sleep(time.Second)
-			canvas.Close()
 			continue
 		}
 
@@ -106,7 +105,6 @@ func AddSong(album_title, song_title, lyrics string, canvas *sql.DB) {
 			failed = true
 			log.Println("Error in .Prepare: Failed to add song", song_title, "in album", album_title+":", err)
 			time.Sleep(time.Second)
-			canvas.Close()
 			continue
 		}
 
@@ -121,7 +119,6 @@ func AddSong(album_title, song_title, lyrics string, canvas *sql.DB) {
 			failed = true
 			log.Println("Error in .Exec: Failed to add song", song_title, "in album", album_title+":", err)
 			time.Sleep(time.Second)
-			canvas.Close()
 			continue
 		}
 
