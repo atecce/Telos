@@ -46,17 +46,17 @@ func communicate(url string) (bool, io.ReadCloser) {
 		switch resp.StatusCode {
 
 		// cases which are returned
-		case 200:
+		case http.StatusOK:
 			return false, resp.Body
-		case 403:
+		case http.StatusForbidden:
 			return true, resp.Body
-		case 404:
+		case http.StatusNotFound:
 			return true, resp.Body
 
-		// cases which are retried
-		case 503:
+			// cases which are retried
+		case http.StatusServiceUnavailable:
 			time.Sleep(30 * time.Minute)
-		case 504:
+		case http.StatusGatewayTimeout:
 			time.Sleep(time.Minute)
 		default:
 			time.Sleep(time.Minute)
