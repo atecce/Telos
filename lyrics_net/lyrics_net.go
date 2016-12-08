@@ -411,7 +411,9 @@ func parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
 		if n.Type == html.TextNode {
 			lyrics += n.Data
 		} else {
-			lyrics += n.FirstChild.Data
+			if n.FirstChild != nil {
+				lyrics += n.FirstChild.Data
+			}
 		}
 	}
 
