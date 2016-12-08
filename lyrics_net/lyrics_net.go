@@ -12,6 +12,7 @@ import (
 
 	"github.com/atecce/investigations/db"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
 )
 
@@ -379,6 +380,9 @@ func parseAlbum(album_url, album_title string, canvas *sql.DB) bool {
 
 func parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
 
+	// finish job at the end of function call
+	defer wg.Done()
+
 	// set body
 	skip, b := communicate(song_url)
 	defer b.Close()
@@ -389,28 +393,29 @@ func parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
 	}
 
 	// parse page
-	z := html.NewTokenizer(b)
-	for {
-		switch z.Next() {
+	root, err := html.Parse(b)
+	if err != nil {
+		panic(err)
+	}
 
-		// end of html document
-		case html.ErrorToken:
-			wg.Done()
-			return
+	// get root of lyrics element
+	lyrics_root, ok := scrape.Find(root, func(n *html.Node) bool {
+		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
+	})
+	if !ok {
+		panic("no match")
+	}
 
-		// catch start tags
-		case html.StartTagToken:
-
-			// find pre tokens
-			if z.Token().Data == "pre" {
-
-				// next token is lyrics
-				z.Next()
-				lyrics := z.Token().Data
-
-				// add song to db
-				db.AddSong(album_title, song_title, lyrics, canvas)
-			}
+	// extract lyrics
+	var lyrics string
+	for n := lyrics_root.FirstChild; n != nil; n = n.NextSibling {
+		if n.Type == html.TextNode {
+			lyrics += n.Data
+		} else {
+			lyrics += n.FirstChild.Data
 		}
 	}
+
+	// add song to db
+	db.AddSong(album_title, song_title, lyrics, canvas)
 }
