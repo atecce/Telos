@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"regexp"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/atecce/investigations/db"
@@ -392,6 +394,13 @@ func parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
 	// parse page
 	root, err := html.Parse(b)
 	if err != nil {
+		if operr, ok := err.(*net.OpError); ok {
+			if operr.Err.Error() == syscall.ECONNRESET.Error() {
+				wg.Add(1)
+				parseSong(song_url, song_title, album_title, canvas)
+				return
+			}
+		}
 		panic(err)
 	}
 
