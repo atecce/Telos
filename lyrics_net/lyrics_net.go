@@ -402,8 +402,10 @@ func parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
 	lyrics_root, ok := scrape.Find(root, func(n *html.Node) bool {
 		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
 	})
+
+	// means no lyrics are listed
 	if !ok {
-		panic("no match")
+		return
 	}
 
 	// extract lyrics
