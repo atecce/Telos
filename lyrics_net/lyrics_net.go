@@ -55,7 +55,7 @@ func communicate(url string) (bool, io.ReadCloser) {
 
 			// cases which are retried
 		case http.StatusServiceUnavailable:
-			time.Sleep(30 * time.Minute)
+			time.Sleep(10 * time.Minute)
 		case http.StatusGatewayTimeout:
 			time.Sleep(time.Minute)
 		default:
