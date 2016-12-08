@@ -82,13 +82,10 @@ func Investigate(start string) {
 
 	// use specified start letter
 	var expression string
-	if start == "0" || start == "" {
-		expression = "^/artists/[0A-Z]$"
-	} else if inASCIIupper(start) {
+	if inASCIIupper(start) {
 		expression = "^/artists/[" + string(start[0]) + "-Z]$"
 	} else {
-		log.Println("Invalid start character.")
-		return
+		expression = "^/artists/[0A-Z]$"
 	}
 
 	// set regular expression for letter suburls
