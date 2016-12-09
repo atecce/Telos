@@ -313,9 +313,6 @@ func no_place(album_title string, z *html.Tokenizer, canvas *sql.DB) {
 
 func parseAlbum(album_url, album_title string, canvas *sql.DB) bool {
 
-	// initialize flag that checks for songs
-	var has_songs bool
-
 	// set body
 	skip, b := communicate(album_url)
 	defer b.Close()
@@ -326,54 +323,51 @@ func parseAlbum(album_url, album_title string, canvas *sql.DB) bool {
 	}
 
 	// parse page
-	z := html.NewTokenizer(b)
-	for {
-		switch z.Next() {
-
-		// end of html document
-		case html.ErrorToken:
-			wg.Wait()
-			return !has_songs
-
-		// catch start tags
-		case html.StartTagToken:
-
-			// check token
-			t := z.Token()
-			switch t.Data {
-
-			// check for home page
-			case "body":
-				for _, a := range t.Attr {
-					if a.Key == "id" && a.Val == "s4-page-homepage" {
-						return true
-					}
-				}
-
-			// find song links
-			case "strong":
-				z.Next()
-				for _, a := range z.Token().Attr {
-					if a.Key == "href" {
-
-						// mark that the page has songs
-						has_songs = true
-
-						// concatenate the url
-						song_url := url + a.Val
-
-						// next token is artist name
-						z.Next()
-						song_title := z.Token().Data
-
-						// parse song
-						wg.Add(1)
-						go parseSong(song_url, song_title, album_title, canvas)
-					}
-				}
-			}
-		}
+	root, err := html.Parse(b)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	// check for home page
+	if _, dorothy := scrape.Find(root, func(n *html.Node) bool {
+		return n.Data == "body" && scrape.Attr(n, "id") == "s4-page-homepage"
+	}); dorothy {
+		return true
+	}
+
+	// find song links
+	song_links := scrape.FindAll(root, func(n *html.Node) bool {
+		if n.Parent != nil {
+			return n.Parent.Data == "strong" && n.Data == "a"
+		}
+		return false
+	})
+
+	// return if no songs
+	if len(song_links) == 0 {
+		return true
+	}
+
+	// scrape links
+	for _, link := range song_links {
+		song_url := url + scrape.Attr(link, "href")
+
+		// title is first child
+		var song_title string
+		if link.FirstChild != nil {
+			song_title = link.FirstChild.Data
+		} else {
+			panic(err)
+		}
+
+		// parse songs
+		wg.Add(1)
+		go parseSong(song_url, song_title, album_title, canvas)
+	}
+
+	// wait for songs
+	wg.Wait()
+	return false
 }
 
 func parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
