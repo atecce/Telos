@@ -2,7 +2,6 @@ package lyrics_net
 
 import (
 	"database/sql"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -37,13 +36,13 @@ func communicate(url string) (bool, io.ReadCloser) {
 
 		// catch error
 		if err != nil {
-			log.Println("\n", err, "\n")
+			log.Println(err)
 			time.Sleep(time.Second)
 			continue
 		}
 
 		// write status to output
-		fmt.Println(time.Now(), url, resp.Status)
+		log.Println(url, resp.Status)
 
 		// check status codes
 		switch resp.StatusCode {
