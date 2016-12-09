@@ -17,14 +17,12 @@ import (
 	"golang.org/x/net/html"
 )
 
-// set wait group
-var wg sync.WaitGroup
+type Investigator struct {
+	URL string
 
-// get url
-var url string = "http://www.lyrics.net"
-
-// set caught up variable
-var caught_up bool
+	wg        sync.WaitGroup
+	caught_up bool
+}
 
 func communicate(url string) (bool, io.ReadCloser) {
 
@@ -75,7 +73,7 @@ func inASCIIupper(start string) bool {
 	return false
 }
 
-func Investigate(start string) {
+func (investigator *Investigator) Investigate(start string) {
 
 	// initiate db
 	canvas := db.InitiateDB("lyrics_net")
@@ -93,7 +91,7 @@ func Investigate(start string) {
 	letters, _ := regexp.Compile(expression)
 
 	// set body
-	skip, b := communicate(url)
+	skip, b := communicate(investigator.URL)
 	defer b.Close()
 
 	// check for skip
@@ -123,10 +121,10 @@ func Investigate(start string) {
 						if letters.MatchString(a.Val) {
 
 							// concatenate the url
-							letter_url := url + a.Val + "/99999"
+							letter_url := investigator.URL + a.Val + "/99999"
 
 							// get artists
-							getArtists(start, letter_url, canvas)
+							investigator.getArtists(start, letter_url, canvas)
 						}
 					}
 				}
@@ -135,12 +133,12 @@ func Investigate(start string) {
 	}
 }
 
-func getArtists(start, letter_url string, canvas *sql.DB) {
+func (investigator *Investigator) getArtists(start, letter_url string, canvas *sql.DB) {
 
 	// set caught up expression
 	expression, _ := regexp.Compile("^" + start + ".*$")
 	if start == "0" {
-		caught_up = true
+		investigator.caught_up = true
 	}
 
 	// set regular expression for letter suburls
@@ -175,7 +173,7 @@ func getArtists(start, letter_url string, canvas *sql.DB) {
 						if artists.MatchString(a.Val) {
 
 							// concatenate the url
-							artist_url := url + "/" + a.Val
+							artist_url := investigator.URL + "/" + a.Val
 
 							// next token is artist name
 							z.Next()
@@ -183,14 +181,14 @@ func getArtists(start, letter_url string, canvas *sql.DB) {
 
 							// check if caught up
 							if expression.MatchString(artist_name) {
-								caught_up = true
+								investigator.caught_up = true
 							}
-							if !caught_up {
+							if !investigator.caught_up {
 								continue
 							}
 
 							// parse the artist
-							parseArtist(artist_url, artist_name, canvas)
+							investigator.parseArtist(artist_url, artist_name, canvas)
 						}
 					}
 				}
@@ -199,7 +197,7 @@ func getArtists(start, letter_url string, canvas *sql.DB) {
 	}
 }
 
-func parseArtist(artist_url, artist_name string, canvas *sql.DB) {
+func (investigator *Investigator) parseArtist(artist_url, artist_name string, canvas *sql.DB) {
 
 	// initialize artist flag
 	var artistAdded bool
@@ -244,7 +242,7 @@ func parseArtist(artist_url, artist_name string, canvas *sql.DB) {
 						z.Next()
 						for _, album_attribute := range z.Token().Attr {
 							if album_attribute.Key == "href" {
-								album_url = url + album_attribute.Val
+								album_url = investigator.URL + album_attribute.Val
 							}
 						}
 
@@ -256,11 +254,11 @@ func parseArtist(artist_url, artist_name string, canvas *sql.DB) {
 						db.AddAlbum(artist_name, album_title, canvas)
 
 						// parse album
-						dorothy := parseAlbum(album_url, album_title, canvas)
+						dorothy := investigator.parseAlbum(album_url, album_title, canvas)
 
 						// handle dorothy
 						if dorothy {
-							no_place(album_title, z, canvas)
+							investigator.no_place(album_title, z, canvas)
 						}
 					}
 				}
@@ -269,7 +267,7 @@ func parseArtist(artist_url, artist_name string, canvas *sql.DB) {
 	}
 }
 
-func no_place(album_title string, z *html.Tokenizer, canvas *sql.DB) {
+func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer, canvas *sql.DB) {
 
 	// parse album from artist page
 	for {
@@ -282,7 +280,7 @@ func no_place(album_title string, z *html.Tokenizer, canvas *sql.DB) {
 
 			for _, a := range t.Attr {
 				if a.Key == "class" && a.Val == "clearfix" {
-					wg.Wait()
+					investigator.wg.Wait()
 					return
 				}
 			}
@@ -296,22 +294,22 @@ func no_place(album_title string, z *html.Tokenizer, canvas *sql.DB) {
 				if a.Key == "href" {
 
 					// concatenate the url
-					song_url := url + a.Val
+					song_url := investigator.URL + a.Val
 
 					// next token is artist name
 					z.Next()
 					song_title := z.Token().Data
 
 					// parse song
-					wg.Add(1)
-					go parseSong(song_url, song_title, album_title, canvas)
+					investigator.wg.Add(1)
+					go investigator.parseSong(song_url, song_title, album_title, canvas)
 				}
 			}
 		}
 	}
 }
 
-func parseAlbum(album_url, album_title string, canvas *sql.DB) bool {
+func (investigator *Investigator) parseAlbum(album_url, album_title string, canvas *sql.DB) bool {
 
 	// initialize flag that checks for songs
 	var has_songs bool
@@ -332,7 +330,7 @@ func parseAlbum(album_url, album_title string, canvas *sql.DB) bool {
 
 		// end of html document
 		case html.ErrorToken:
-			wg.Wait()
+			investigator.wg.Wait()
 			return !has_songs
 
 		// catch start tags
@@ -360,15 +358,15 @@ func parseAlbum(album_url, album_title string, canvas *sql.DB) bool {
 						has_songs = true
 
 						// concatenate the url
-						song_url := url + a.Val
+						song_url := investigator.URL + a.Val
 
 						// next token is artist name
 						z.Next()
 						song_title := z.Token().Data
 
 						// parse song
-						wg.Add(1)
-						go parseSong(song_url, song_title, album_title, canvas)
+						investigator.wg.Add(1)
+						go investigator.parseSong(song_url, song_title, album_title, canvas)
 					}
 				}
 			}
@@ -376,10 +374,10 @@ func parseAlbum(album_url, album_title string, canvas *sql.DB) bool {
 	}
 }
 
-func parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
+func (investigator *Investigator) parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
 
 	// finish job at the end of function call
-	defer wg.Done()
+	defer investigator.wg.Done()
 
 	// set body
 	skip, b := communicate(song_url)
@@ -395,8 +393,8 @@ func parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
 	if err != nil {
 		if operr, ok := err.(*net.OpError); ok {
 			if operr.Err.Error() == syscall.ECONNRESET.Error() {
-				wg.Add(1)
-				parseSong(song_url, song_title, album_title, canvas)
+				investigator.wg.Add(1)
+				investigator.parseSong(song_url, song_title, album_title, canvas)
 				return
 			}
 		}

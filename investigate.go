@@ -13,5 +13,8 @@ func main() {
 	flag.Parse()
 
 	// start the investigation
-	lyrics_net.Investigate(*start)
+	wittgenstein := lyrics_net.Investigator{
+		URL: "http://www.lyrics.net",
+	}
+	wittgenstein.Investigate(*start)
 }
