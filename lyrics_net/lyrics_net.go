@@ -404,16 +404,8 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 	}
 
 	// extract lyrics
-	var lyrics string
-	for n := lyrics_root.FirstChild; n != nil; n = n.NextSibling {
-		if n.Type == html.TextNode {
-			lyrics += n.Data
-		} else {
-			if n.FirstChild != nil {
-				lyrics += n.FirstChild.Data
-			}
-		}
-	}
+	lyrics := scrape.Text(lyrics_root)
+	log.Println(lyrics)
 
 	// add song to db
 	db.AddSong(album_title, song_title, lyrics, canvas)
