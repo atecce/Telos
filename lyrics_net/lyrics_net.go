@@ -393,15 +393,11 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 		panic(err)
 	}
 
-	// get root of lyrics element
+	// extract lyrics
 	if lyrics_root, ok := scrape.Find(root, func(n *html.Node) bool {
 		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
 	}); ok {
-
-		// extract lyrics
 		lyrics := scrape.Text(lyrics_root)
-
-		// add song to db
 		db.AddSong(album_title, song_title, lyrics, canvas)
 	}
 }
