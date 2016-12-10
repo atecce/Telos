@@ -76,10 +76,7 @@ func inASCIIupper(start string) bool {
 func (investigator *Investigator) Investigate(start string) {
 
 	// initiate db
-	investigator.canvas = &canvas.Canvas{
-		canvas.New("lyrics_net"),
-	}
-	defer investigator.canvas.DB.Close()
+	investigator.canvas = canvas.New("lyrics_net")
 
 	// use specified start letter
 	var expression string

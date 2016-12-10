@@ -9,13 +9,14 @@ import (
 )
 
 type Canvas struct {
-	DB *sql.DB
+	name string
 }
 
-func New(name string) *sql.DB {
+func New(name string) *Canvas {
 
 	// prepare db
 	db, err := sql.Open("sqlite3", name+".db")
+	defer db.Close()
 
 	// create tables
 	_, err = db.Exec(`create table if not exists artists (
@@ -46,13 +47,17 @@ func New(name string) *sql.DB {
 		log.Println("Failed to create tables:", err)
 	}
 
-	return db
+	return &Canvas{
+		name: name,
+	}
 }
 
 func (canvas *Canvas) AddArtist(artist_name string) {
 
 	// prepare db
-	tx, err := canvas.DB.Begin()
+	db, err := sql.Open("sqlite3", canvas.name+".db")
+	defer db.Close()
+	tx, err := db.Begin()
 
 	// insert entry
 	stmt, err := tx.Prepare("insert or replace into artists (name) values (?)")
@@ -69,7 +74,9 @@ func (canvas *Canvas) AddArtist(artist_name string) {
 func (canvas *Canvas) AddAlbum(artist_name, album_title string) {
 
 	// prepare db
-	tx, err := canvas.DB.Begin()
+	db, err := sql.Open("sqlite3", canvas.name+".db")
+	defer db.Close()
+	tx, err := db.Begin()
 
 	// insert entry
 	stmt, err := tx.Prepare("insert or replace into albums (artist_name, title) values (?, ?)")
@@ -85,13 +92,20 @@ func (canvas *Canvas) AddAlbum(artist_name, album_title string) {
 
 func (canvas *Canvas) AddSong(album_title, song_title, lyrics string) {
 
+	// open db
+	db, err := sql.Open("sqlite3", canvas.name+".db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
 	// initialized failed flag
 	var failed bool
 
 	for {
 
 		// prepare db
-		tx, err := canvas.DB.Begin()
+		tx, err := db.Begin()
 
 		// catch error
 		if err != nil {
