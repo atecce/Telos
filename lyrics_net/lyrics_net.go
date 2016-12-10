@@ -20,7 +20,7 @@ type Investigator struct {
 	URL string
 
 	canvas    *canvas.Canvas
-	wg        *sync.WaitGroup
+	wg        sync.WaitGroup
 	caught_up bool
 }
 
