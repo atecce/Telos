@@ -1,4 +1,4 @@
-package db
+package canvas
 
 import (
 	"database/sql"
@@ -9,22 +9,22 @@ import (
 )
 
 type Canvas struct {
-	Database *sql.DB
+	DB *sql.DB
 }
 
 func New(name string) *sql.DB {
 
 	// prepare db
-	database, err := sql.Open("sqlite3", name+".db")
+	db, err := sql.Open("sqlite3", name+".db")
 
 	// create tables
-	_, err = database.Exec(`create table if not exists artists (
+	_, err = db.Exec(`create table if not exists artists (
 
 				      name text not null,
 
 				      primary key (name))`)
 
-	_, err = database.Exec(`create table if not exists albums (
+	_, err = db.Exec(`create table if not exists albums (
 
 				     title       text not null,
 				     artist_name text not null,
@@ -32,7 +32,7 @@ func New(name string) *sql.DB {
 				     primary key (title, artist_name),
 				     foreign key (artist_name) references artists (name))`)
 
-	_, err = database.Exec(`create table if not exists songs (
+	_, err = db.Exec(`create table if not exists songs (
 
 				     title       text not null,
 				     album_title text not null,
@@ -46,13 +46,13 @@ func New(name string) *sql.DB {
 		log.Println("Failed to create tables:", err)
 	}
 
-	return database
+	return db
 }
 
 func (canvas *Canvas) AddArtist(artist_name string) {
 
 	// prepare db
-	tx, err := canvas.Database.Begin()
+	tx, err := canvas.DB.Begin()
 
 	// insert entry
 	stmt, err := tx.Prepare("insert or replace into artists (name) values (?)")
@@ -69,7 +69,7 @@ func (canvas *Canvas) AddArtist(artist_name string) {
 func (canvas *Canvas) AddAlbum(artist_name, album_title string) {
 
 	// prepare db
-	tx, err := canvas.Database.Begin()
+	tx, err := canvas.DB.Begin()
 
 	// insert entry
 	stmt, err := tx.Prepare("insert or replace into albums (artist_name, title) values (?, ?)")
@@ -91,7 +91,7 @@ func (canvas *Canvas) AddSong(album_title, song_title, lyrics string) {
 	for {
 
 		// prepare db
-		tx, err := canvas.Database.Begin()
+		tx, err := canvas.DB.Begin()
 
 		// catch error
 		if err != nil {

@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/atecce/investigations/db"
+	"github.com/atecce/investigations/canvas"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
@@ -19,7 +19,7 @@ import (
 type Investigator struct {
 	URL string
 
-	canvas    *db.Canvas
+	canvas    *canvas.Canvas
 	wg        sync.WaitGroup
 	caught_up bool
 }
@@ -76,10 +76,10 @@ func inASCIIupper(start string) bool {
 func (investigator *Investigator) Investigate(start string) {
 
 	// initiate db
-	investigator.canvas = &db.Canvas{
-		db.New("lyrics_net"),
+	investigator.canvas = &canvas.Canvas{
+		canvas.New("lyrics_net"),
 	}
-	defer investigator.canvas.Database.Close()
+	defer investigator.canvas.DB.Close()
 
 	// use specified start letter
 	var expression string
