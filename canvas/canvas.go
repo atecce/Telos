@@ -9,6 +9,7 @@ import (
 )
 
 type Canvas struct {
+	db   *sql.DB
 	name string
 }
 
@@ -16,7 +17,6 @@ func New(name string) *Canvas {
 
 	// prepare db
 	db, err := sql.Open("sqlite3", name+".db")
-	defer db.Close()
 
 	// create tables
 	_, err = db.Exec(`create table if not exists artists (
@@ -48,6 +48,7 @@ func New(name string) *Canvas {
 	}
 
 	return &Canvas{
+		db:   db,
 		name: name,
 	}
 }
@@ -55,9 +56,7 @@ func New(name string) *Canvas {
 func (canvas *Canvas) AddArtist(artist_name string) {
 
 	// prepare db
-	db, err := sql.Open("sqlite3", canvas.name+".db")
-	defer db.Close()
-	tx, err := db.Begin()
+	tx, err := canvas.db.Begin()
 
 	// insert entry
 	stmt, err := tx.Prepare("insert or replace into artists (name) values (?)")
@@ -74,9 +73,7 @@ func (canvas *Canvas) AddArtist(artist_name string) {
 func (canvas *Canvas) AddAlbum(artist_name, album_title string) {
 
 	// prepare db
-	db, err := sql.Open("sqlite3", canvas.name+".db")
-	defer db.Close()
-	tx, err := db.Begin()
+	tx, err := canvas.db.Begin()
 
 	// insert entry
 	stmt, err := tx.Prepare("insert or replace into albums (artist_name, title) values (?, ?)")
@@ -86,34 +83,22 @@ func (canvas *Canvas) AddAlbum(artist_name, album_title string) {
 
 	// catch error
 	if err != nil {
-		log.Println("Failed to add album", album_title, "by", artist_name+":", err)
+		log.Fatal("Failed to add album", album_title, "by", artist_name+":", err)
 	}
 }
 
 func (canvas *Canvas) AddSong(album_title, song_title, lyrics string) {
 
-	// open db
-	db, err := sql.Open("sqlite3", canvas.name+".db")
+	// prepare db
+	tx, err := canvas.db.Begin()
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
 	// initialized failed flag
 	var failed bool
 
 	for {
-
-		// prepare db
-		tx, err := db.Begin()
-
-		// catch error
-		if err != nil {
-			failed = true
-			log.Println("Error in .Begin: Failed to add song", song_title, "in album", album_title+":", err)
-			time.Sleep(time.Second)
-			continue
-		}
 
 		// prepare statement
 		stmt, err := tx.Prepare("insert or replace into songs (album_title, title, lyrics) values (?, ?, ?)")
