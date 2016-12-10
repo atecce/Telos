@@ -154,45 +154,43 @@ func (investigator *Investigator) getArtists(start, letter_url string, canvas *s
 	}
 
 	// parse page
-	z := html.NewTokenizer(b)
-	for {
-		switch z.Next() {
+	root, err := html.Parse(b)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-		// end of document
-		case html.ErrorToken:
-			return
+	// find artist urls
+	artist_links := scrape.FindAll(root, func(n *html.Node) bool {
+		if n.Parent != nil {
+			return n.Parent.Data == "strong" && n.Data == "a"
+		}
+		return false
+	})
+	for _, link := range artist_links {
 
-		// catch start tags
-		case html.StartTagToken:
+		artist_suburl := scrape.Attr(link, "href")
 
-			// find artist urls
-			if z.Token().Data == "strong" {
-				z.Next()
-				for _, a := range z.Token().Attr {
-					if a.Key == "href" {
-						if artists.MatchString(a.Val) {
+		if artists.MatchString(artist_suburl) {
 
-							// concatenate the url
-							artist_url := investigator.URL + "/" + a.Val
+			// concatenate artist url
+			artist_url := investigator.URL + "/" + artist_suburl
 
-							// next token is artist name
-							z.Next()
-							artist_name := z.Token().Data
-
-							// check if caught up
-							if expression.MatchString(artist_name) {
-								investigator.caught_up = true
-							}
-							if !investigator.caught_up {
-								continue
-							}
-
-							// parse the artist
-							investigator.parseArtist(artist_url, artist_name, canvas)
-						}
-					}
-				}
+			// extract artist name
+			var artist_name string
+			if link.FirstChild != nil {
+				artist_name = link.FirstChild.Data
 			}
+
+			// check if caught up
+			if expression.MatchString(artist_name) {
+				investigator.caught_up = true
+			}
+			if !investigator.caught_up {
+				continue
+			}
+
+			// parse the artist
+			investigator.parseArtist(artist_url, artist_name, canvas)
 		}
 	}
 }
