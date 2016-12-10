@@ -53,7 +53,7 @@ func communicate(url string) (bool, io.ReadCloser) {
 		case http.StatusNotFound:
 			return true, resp.Body
 
-			// cases which are retried
+		// cases which are retried
 		case http.StatusServiceUnavailable:
 			time.Sleep(10 * time.Minute)
 		case http.StatusGatewayTimeout:
