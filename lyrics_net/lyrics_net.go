@@ -1,7 +1,6 @@
 package lyrics_net
 
 import (
-	"database/sql"
 	"io"
 	"log"
 	"net"
@@ -20,6 +19,7 @@ import (
 type Investigator struct {
 	URL string
 
+	canvas    *db.Canvas
 	wg        sync.WaitGroup
 	caught_up bool
 }
@@ -76,8 +76,10 @@ func inASCIIupper(start string) bool {
 func (investigator *Investigator) Investigate(start string) {
 
 	// initiate db
-	canvas := db.InitiateDB("lyrics_net")
-	defer canvas.Close()
+	investigator.canvas = &db.Canvas{
+		db.New("lyrics_net"),
+	}
+	defer investigator.canvas.Database.Close()
 
 	// use specified start letter
 	var expression string
@@ -124,7 +126,7 @@ func (investigator *Investigator) Investigate(start string) {
 							letter_url := investigator.URL + a.Val + "/99999"
 
 							// get artists
-							investigator.getArtists(start, letter_url, canvas)
+							investigator.getArtists(start, letter_url)
 						}
 					}
 				}
@@ -133,7 +135,7 @@ func (investigator *Investigator) Investigate(start string) {
 	}
 }
 
-func (investigator *Investigator) getArtists(start, letter_url string, canvas *sql.DB) {
+func (investigator *Investigator) getArtists(start, letter_url string) {
 
 	// set caught up expression
 	expression, _ := regexp.Compile("^" + start + ".*$")
@@ -190,12 +192,12 @@ func (investigator *Investigator) getArtists(start, letter_url string, canvas *s
 			}
 
 			// parse the artist
-			investigator.parseArtist(artist_url, artist_name, canvas)
+			investigator.parseArtist(artist_url, artist_name)
 		}
 	}
 }
 
-func (investigator *Investigator) parseArtist(artist_url, artist_name string, canvas *sql.DB) {
+func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 
 	// initialize artist flag
 	var artistAdded bool
@@ -231,7 +233,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string, ca
 
 						// add artist
 						if !artistAdded {
-							db.AddArtist(artist_name, canvas)
+							investigator.canvas.AddArtist(artist_name)
 							artistAdded = true
 						}
 
@@ -249,14 +251,14 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string, ca
 						album_title := z.Token().Data
 
 						// add album
-						db.AddAlbum(artist_name, album_title, canvas)
+						investigator.canvas.AddAlbum(artist_name, album_title)
 
 						// parse album
-						dorothy := investigator.parseAlbum(album_url, album_title, canvas)
+						dorothy := investigator.parseAlbum(album_url, album_title)
 
 						// handle dorothy
 						if dorothy {
-							investigator.no_place(album_title, z, canvas)
+							investigator.no_place(album_title, z)
 						}
 					}
 				}
@@ -265,7 +267,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string, ca
 	}
 }
 
-func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer, canvas *sql.DB) {
+func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer) {
 
 	// parse album from artist page
 	for {
@@ -300,14 +302,14 @@ func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer
 
 					// parse song
 					investigator.wg.Add(1)
-					go investigator.parseSong(song_url, song_title, album_title, canvas)
+					go investigator.parseSong(song_url, song_title, album_title)
 				}
 			}
 		}
 	}
 }
 
-func (investigator *Investigator) parseAlbum(album_url, album_title string, canvas *sql.DB) bool {
+func (investigator *Investigator) parseAlbum(album_url, album_title string) bool {
 
 	// set body
 	skip, b := communicate(album_url)
@@ -358,7 +360,7 @@ func (investigator *Investigator) parseAlbum(album_url, album_title string, canv
 
 		// parse songs
 		investigator.wg.Add(1)
-		go investigator.parseSong(song_url, song_title, album_title, canvas)
+		go investigator.parseSong(song_url, song_title, album_title)
 	}
 
 	// wait for songs
@@ -366,7 +368,7 @@ func (investigator *Investigator) parseAlbum(album_url, album_title string, canv
 	return false
 }
 
-func (investigator *Investigator) parseSong(song_url, song_title, album_title string, canvas *sql.DB) {
+func (investigator *Investigator) parseSong(song_url, song_title, album_title string) {
 
 	// finish job at the end of function call
 	defer investigator.wg.Done()
@@ -386,7 +388,7 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 		if operr, ok := err.(*net.OpError); ok {
 			if operr.Err.Error() == syscall.ECONNRESET.Error() {
 				investigator.wg.Add(1)
-				investigator.parseSong(song_url, song_title, album_title, canvas)
+				investigator.parseSong(song_url, song_title, album_title)
 				return
 			}
 		}
@@ -398,6 +400,6 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
 	}); ok {
 		lyrics := scrape.Text(lyrics_root)
-		db.AddSong(album_title, song_title, lyrics, canvas)
+		investigator.canvas.AddSong(album_title, song_title, lyrics)
 	}
 }

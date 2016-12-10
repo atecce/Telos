@@ -8,19 +8,23 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func InitiateDB(name string) *sql.DB {
+type Canvas struct {
+	Database *sql.DB
+}
+
+func New(name string) *sql.DB {
 
 	// prepare db
-	canvas, err := sql.Open("sqlite3", name+".db")
+	database, err := sql.Open("sqlite3", name+".db")
 
 	// create tables
-	_, err = canvas.Exec(`create table if not exists artists (
+	_, err = database.Exec(`create table if not exists artists (
 
 				      name text not null,
 
 				      primary key (name))`)
 
-	_, err = canvas.Exec(`create table if not exists albums (
+	_, err = database.Exec(`create table if not exists albums (
 
 				     title       text not null,
 				     artist_name text not null,
@@ -28,7 +32,7 @@ func InitiateDB(name string) *sql.DB {
 				     primary key (title, artist_name),
 				     foreign key (artist_name) references artists (name))`)
 
-	_, err = canvas.Exec(`create table if not exists songs (
+	_, err = database.Exec(`create table if not exists songs (
 
 				     title       text not null,
 				     album_title text not null,
@@ -42,13 +46,13 @@ func InitiateDB(name string) *sql.DB {
 		log.Println("Failed to create tables:", err)
 	}
 
-	return canvas
+	return database
 }
 
-func AddArtist(artist_name string, canvas *sql.DB) {
+func (canvas *Canvas) AddArtist(artist_name string) {
 
 	// prepare db
-	tx, err := canvas.Begin()
+	tx, err := canvas.Database.Begin()
 
 	// insert entry
 	stmt, err := tx.Prepare("insert or replace into artists (name) values (?)")
@@ -62,10 +66,10 @@ func AddArtist(artist_name string, canvas *sql.DB) {
 	}
 }
 
-func AddAlbum(artist_name, album_title string, canvas *sql.DB) {
+func (canvas *Canvas) AddAlbum(artist_name, album_title string) {
 
 	// prepare db
-	tx, err := canvas.Begin()
+	tx, err := canvas.Database.Begin()
 
 	// insert entry
 	stmt, err := tx.Prepare("insert or replace into albums (artist_name, title) values (?, ?)")
@@ -79,7 +83,7 @@ func AddAlbum(artist_name, album_title string, canvas *sql.DB) {
 	}
 }
 
-func AddSong(album_title, song_title, lyrics string, canvas *sql.DB) {
+func (canvas *Canvas) AddSong(album_title, song_title, lyrics string) {
 
 	// initialized failed flag
 	var failed bool
@@ -87,7 +91,7 @@ func AddSong(album_title, song_title, lyrics string, canvas *sql.DB) {
 	for {
 
 		// prepare db
-		tx, err := canvas.Begin()
+		tx, err := canvas.Database.Begin()
 
 		// catch error
 		if err != nil {
