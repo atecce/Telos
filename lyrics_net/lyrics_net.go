@@ -405,7 +405,6 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 
 	// extract lyrics
 	lyrics := scrape.Text(lyrics_root)
-	log.Println(lyrics)
 
 	// add song to db
 	db.AddSong(album_title, song_title, lyrics, canvas)
