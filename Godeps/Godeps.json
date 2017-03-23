@@ -1,0 +1,28 @@
+{
+	"ImportPath": "github.com/atecce/investigations",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Comment": "v1.2.0-69-g866c329",
+			"Rev": "866c3293d9a76aa491e56cc978d0d7fb0e63e121"
+		},
+		{
+			"ImportPath": "github.com/yhat/scrape",
+			"Rev": "24b7890b0945459dbf91743e4d2ac5d75a51fee2"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "a6577fac2d73be281a500b310739095313165611"
+		},
+		{
+			"ImportPath": "golang.org/x/net/html",
+			"Rev": "a6577fac2d73be281a500b310739095313165611"
+		},
+		{
+			"ImportPath": "golang.org/x/net/html/atom",
+			"Rev": "a6577fac2d73be281a500b310739095313165611"
+		}
+	]
+}
