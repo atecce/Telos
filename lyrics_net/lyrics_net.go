@@ -24,7 +24,7 @@ type Investigator struct {
 	caught_up bool
 }
 
-func communicate(url string) (bool, io.ReadCloser) {
+func get(url string) (*io.ReadCloser, bool) {
 
 	// never stop trying
 	for {
@@ -47,11 +47,13 @@ func communicate(url string) (bool, io.ReadCloser) {
 
 		// cases which are returned
 		case http.StatusOK:
-			return false, resp.Body
+			return &resp.Body, true
 		case http.StatusForbidden:
-			return true, resp.Body
+			resp.Body.Close()
+			return nil, false
 		case http.StatusNotFound:
-			return true, resp.Body
+			resp.Body.Close()
+			return nil, false
 
 		// cases which are retried
 		case http.StatusServiceUnavailable:
@@ -90,16 +92,14 @@ func (investigator *Investigator) Investigate(start string) {
 	letters, _ := regexp.Compile(expression)
 
 	// set body
-	skip, b := communicate(investigator.URL)
-	defer b.Close()
-
-	// check for skip
-	if skip {
+	b, ok := get(investigator.URL)
+	if !ok {
 		return
 	}
+	defer b.Close()
 
 	// parse page
-	z := html.NewTokenizer(b)
+	z := html.NewTokenizer(*b)
 	for {
 		switch z.Next() {
 
@@ -144,16 +144,14 @@ func (investigator *Investigator) getArtists(start, letter_url string) {
 	artists, _ := regexp.Compile("^artist/.*$")
 
 	// set body
-	skip, b := communicate(letter_url)
-	defer b.Close()
-
-	// check for skip
-	if skip {
+	b, ok := get(letter_url)
+	if !ok {
 		return
 	}
+	defer b.Close()
 
 	// parse page
-	root, err := html.Parse(b)
+	root, err := html.Parse(*b)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -200,16 +198,14 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 	var artistAdded bool
 
 	// set body
-	skip, b := communicate(artist_url)
-	defer b.Close()
-
-	// check for skip
-	if skip {
+	b, ok := get(artist_url)
+	if !ok {
 		return
 	}
+	defer b.Close()
 
 	// parse page
-	z := html.NewTokenizer(b)
+	z := html.NewTokenizer(*b)
 	for {
 		switch z.Next() {
 
@@ -309,13 +305,11 @@ func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer
 func (investigator *Investigator) parseAlbum(album_url, album_title string) bool {
 
 	// set body
-	skip, b := communicate(album_url)
-	defer b.Close()
-
-	// check for skip
-	if skip {
+	b, ok := get(album_url)
+	if !ok {
 		return false
 	}
+	defer b.Close()
 
 	// parse page
 	root, err := html.Parse(b)
@@ -370,17 +364,15 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 	// finish job at the end of function call
 	defer investigator.wg.Done()
 
-	// set body
-	skip, b := communicate(song_url)
-	defer b.Close()
-
-	// check for skip
-	if skip {
+	// get body
+	b, ok := get(song_url)
+	if !ok {
 		return
 	}
+	defer b.Close()
 
 	// parse page
-	root, err := html.Parse(b)
+	root, err := html.Parse(*b)
 	if err != nil {
 		if operr, ok := err.(*net.OpError); ok {
 			if operr.Err.Error() == syscall.ECONNRESET.Error() {
