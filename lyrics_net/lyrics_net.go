@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"git.atec.pub/rest"
+
 	"github.com/atecce/investigations/canvas"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
@@ -22,43 +24,6 @@ type Investigator struct {
 	canvas    *canvas.Canvas
 	wg        sync.WaitGroup
 	caught_up bool
-}
-
-func get(url string) (*io.ReadCloser, bool) {
-
-	// never stop trying
-	for {
-
-		// get url
-		resp, err := http.Get(url)
-		if err != nil {
-			log.Println(err)
-			time.Sleep(time.Second)
-			continue
-		}
-		log.Println(url, resp.Status)
-
-		switch resp.StatusCode {
-
-		// cases which are returned
-		case http.StatusOK:
-			return &resp.Body, true
-		case http.StatusForbidden:
-			resp.Body.Close()
-			return nil, false
-		case http.StatusNotFound:
-			resp.Body.Close()
-			return nil, false
-
-		// cases which are retried
-		case http.StatusServiceUnavailable:
-			time.Sleep(10 * time.Minute)
-		case http.StatusGatewayTimeout:
-			time.Sleep(time.Minute)
-		default:
-			time.Sleep(time.Minute)
-		}
-	}
 }
 
 func inASCIIupper(start string) bool {
@@ -86,7 +51,7 @@ func (investigator *Investigator) Investigate(start string) {
 	letters, _ := regexp.Compile(expression)
 
 	// get body
-	b, ok := get(investigator.URL)
+	b, ok := rest.Get(investigator.URL)
 	if !ok {
 		return
 	}
@@ -138,7 +103,7 @@ func (investigator *Investigator) getArtists(start, letter_url string) {
 	artists, _ := regexp.Compile("^artist/.*$")
 
 	// set body
-	b, ok := get(letter_url)
+	b, ok := rest.Get(letter_url)
 	if !ok {
 		return
 	}
@@ -192,7 +157,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 	var artistAdded bool
 
 	// get body
-	b, ok := get(artist_url)
+	b, ok := rest.Get(artist_url)
 	if !ok {
 		return
 	}
@@ -299,7 +264,7 @@ func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer
 func (investigator *Investigator) parseAlbum(album_url, album_title string) bool {
 
 	// get body
-	b, ok := get(album_url)
+	b, ok := rest.Get(album_url)
 	if !ok {
 		return false
 	}
@@ -359,7 +324,7 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 	defer investigator.wg.Done()
 
 	// get body
-	b, ok := get(song_url)
+	b, ok := rest.Get(song_url)
 	if !ok {
 		return
 	}
