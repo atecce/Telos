@@ -31,18 +31,13 @@ func get(url string) (*io.ReadCloser, bool) {
 
 		// get url
 		resp, err := http.Get(url)
-
-		// catch error
 		if err != nil {
 			log.Println(err)
 			time.Sleep(time.Second)
 			continue
 		}
-
-		// write status to output
 		log.Println(url, resp.Status)
 
-		// check status codes
 		switch resp.StatusCode {
 
 		// cases which are returned
@@ -77,7 +72,6 @@ func inASCIIupper(start string) bool {
 
 func (investigator *Investigator) Investigate(start string) {
 
-	// initiate db
 	investigator.canvas = canvas.New("lyrics_net")
 
 	// use specified start letter
@@ -91,7 +85,7 @@ func (investigator *Investigator) Investigate(start string) {
 	// set regular expression for letter suburls
 	letters, _ := regexp.Compile(expression)
 
-	// set body
+	// get body
 	b, ok := get(investigator.URL)
 	if !ok {
 		return
@@ -197,7 +191,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 	// initialize artist flag
 	var artistAdded bool
 
-	// set body
+	// get body
 	b, ok := get(artist_url)
 	if !ok {
 		return
@@ -304,7 +298,7 @@ func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer
 
 func (investigator *Investigator) parseAlbum(album_url, album_title string) bool {
 
-	// set body
+	// get body
 	b, ok := get(album_url)
 	if !ok {
 		return false
