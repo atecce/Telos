@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/de-nova-stella/rest"
   packages = ["."]
-  revision = "37a610cd33fc7855038e5480a2595672502a6a48"
+  revision = "5038925f409c154f724bb679ce6d95744711c41c"
 
 [[projects]]
   branch = "master"

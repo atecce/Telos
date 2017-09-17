@@ -14,13 +14,13 @@ func Get(name string) (io.ReadCloser, bool) {
 	for {
 		resp, err := http.Get(name)
 		if err != nil {
-			log.Println(err)
+			log.Println("[ERROR] getting http resource", err)
 			time.Sleep(time.Second)
 			continue
 		}
 
 		// TODO
-		log.Println(name, resp.Status)
+		log.Println("[INFO] GET:", name, resp.Status)
 
 		switch resp.StatusCode {
 
