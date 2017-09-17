@@ -42,7 +42,7 @@ func PutAlbum(album Album) {
 		pretty.Logln("[DEBUG] on tx", tx, "with err", err)
 	}
 
-	_, err = stmt.Exec(album.Artist, album.Name)
+	_, err = stmt.Exec(album.Artist.Name, album.Name)
 	if err != nil {
 		log.Println("[ERROR] execing stmt for album", album)
 		pretty.Logln("[DEBUG] on stmt", stmt, "with err", err)
