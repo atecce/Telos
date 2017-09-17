@@ -170,7 +170,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 
 						// add artist
 						if !artistAdded {
-							canvas.PutArtist(*artist)
+							artist.Put()
 							artistAdded = true
 						}
 
@@ -195,7 +195,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 						}
 
 						// add album
-						canvas.PutAlbum(*album)
+						album.Put()
 
 						// parse album
 						dorothy := investigator.parseAlbum(album)
@@ -342,12 +342,13 @@ func (investigator *Investigator) parseSong(song_url, song_title string, album *
 		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
 	}); ok {
 		lyrics := scrape.Text(lyrics_root)
-		canvas.PutSong(canvas.Song{
+		song := canvas.Song{
 			Album: nil, // TODO album_title,
 
 			Url:    song_url,
 			Name:   song_title,
 			Lyrics: lyrics,
-		})
+		}
+		song.Put()
 	}
 }

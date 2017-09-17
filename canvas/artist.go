@@ -23,7 +23,7 @@ func initArtists() {
 	}
 }
 
-func PutArtist(artist Artist) {
+func (artist *Artist) Put() {
 
 	tx := begin()
 	if tx == nil {

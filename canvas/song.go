@@ -31,7 +31,7 @@ func initSongs() {
 	}
 }
 
-func PutSong(song Song) {
+func (song *Song) Put() {
 
 	tx := begin()
 	if tx == nil {

@@ -29,7 +29,7 @@ func initAlbums() {
 
 }
 
-func PutAlbum(album Album) {
+func (album *Album) Put() {
 
 	tx := begin()
 	if tx == nil {
