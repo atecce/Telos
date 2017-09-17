@@ -125,19 +125,24 @@ func (investigator *Investigator) getArtists(letter_url string) {
 				artist_name = link.FirstChild.Data
 			}
 
+			artist := &canvas.Artist{
+				Url:  artist_url,
+				Name: artist_name,
+			}
+
 			// parse the artist
-			investigator.parseArtist(artist_url, artist_name)
+			investigator.parseArtist(artist)
 		}
 	}
 }
 
-func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
+func (investigator *Investigator) parseArtist(artist *canvas.Artist) {
 
 	// initialize artist flag
 	var artistAdded bool
 
 	// get body
-	b, ok := rest.Get(artist_url)
+	b, ok := rest.Get(artist.Url)
 	if !ok {
 		return
 	}
@@ -163,11 +168,6 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 				for _, a := range t.Attr {
 					if a.Key == "class" && a.Val == "artist-album-label" {
 
-						artist := &canvas.Artist{
-							Url:  artist_url,
-							Name: artist_name,
-						}
-
 						// add artist
 						if !artistAdded {
 							artist.Put()
@@ -185,13 +185,11 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 
 						// album titles are the next token
 						z.Next()
-						name := z.Token().Data
-
 						album := &canvas.Album{
 							Artist: artist,
 
 							Url:  album_url,
-							Name: name,
+							Name: z.Token().Data,
 						}
 
 						// add album
@@ -244,9 +242,14 @@ func (investigator *Investigator) no_place(album *canvas.Album, z *html.Tokenize
 					z.Next()
 					song_title := z.Token().Data
 
+					song := &canvas.Song{
+						Url:  song_url,
+						Name: song_title,
+					}
+
 					// parse song
 					investigator.wg.Add(1)
-					go investigator.parseSong(song_url, song_title, album)
+					go investigator.parseSong(song)
 				}
 			}
 		}
@@ -304,7 +307,11 @@ func (investigator *Investigator) parseAlbum(album *canvas.Album) bool {
 
 		// parse songs
 		investigator.wg.Add(1)
-		go investigator.parseSong(song_url, song_title, album)
+		song := &canvas.Song{
+			Url:  song_url,
+			Name: song_title,
+		}
+		go investigator.parseSong(song)
 	}
 
 	// wait for songs
@@ -312,13 +319,13 @@ func (investigator *Investigator) parseAlbum(album *canvas.Album) bool {
 	return false
 }
 
-func (investigator *Investigator) parseSong(song_url, song_title string, album *canvas.Album) {
+func (investigator *Investigator) parseSong(song *canvas.Song) {
 
 	// finish job at the end of function call
 	defer investigator.wg.Done()
 
 	// get body
-	b, ok := rest.Get(song_url)
+	b, ok := rest.Get(song.Url)
 	if !ok {
 		return
 	}
@@ -330,7 +337,7 @@ func (investigator *Investigator) parseSong(song_url, song_title string, album *
 		if operr, ok := err.(*net.OpError); ok {
 			if operr.Err.Error() == syscall.ECONNRESET.Error() {
 				investigator.wg.Add(1)
-				investigator.parseSong(song_url, song_title, album)
+				investigator.parseSong(song)
 				return
 			}
 		}
@@ -341,14 +348,7 @@ func (investigator *Investigator) parseSong(song_url, song_title string, album *
 	if lyrics_root, ok := scrape.Find(root, func(n *html.Node) bool {
 		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
 	}); ok {
-		lyrics := scrape.Text(lyrics_root)
-		song := canvas.Song{
-			Album: album,
-
-			Url:    song_url,
-			Name:   song_title,
-			Lyrics: lyrics,
-		}
+		song.Lyrics = scrape.Text(lyrics_root)
 		song.Put()
 	}
 }
