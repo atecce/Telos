@@ -17,11 +17,10 @@ import (
 const domain = "http://www.lyrics.net"
 
 type Investigator struct {
-	start string
+	expression string
 
-	canvas    *canvas.Canvas
-	wg        sync.WaitGroup
-	caught_up bool
+	canvas *canvas.Canvas
+	wg     sync.WaitGroup
 }
 
 func inASCIIupper(str string) bool {
@@ -34,12 +33,16 @@ func inASCIIupper(str string) bool {
 }
 
 func New(start string) *Investigator {
+
 	investigator := new(Investigator)
-	if start == "0" {
-		investigator.caught_up = true
-	}
-	investigator.start = start
 	investigator.canvas = canvas.New("lyrics_net")
+
+	if inASCIIupper(start) {
+		investigator.expression = "^/artists/[" + string(start[0]) + "-Z]$"
+	} else {
+		investigator.expression = "^/artists/[0A-Z]$"
+	}
+
 	return investigator
 }
 
@@ -68,14 +71,7 @@ func (investigator *Investigator) Run() {
 
 func (investigator *Investigator) getLetterLink(t html.Token) (string, bool) {
 
-	var expression string
-	if inASCIIupper(investigator.start) {
-		expression = "^/artists/[" + string(investigator.start[0]) + "-Z]$"
-	} else {
-		expression = "^/artists/[0A-Z]$"
-	}
-
-	letters, _ := regexp.Compile(expression)
+	letters, _ := regexp.Compile(investigator.expression)
 
 	if t.Data == "a" {
 		for _, a := range t.Attr {
@@ -97,9 +93,6 @@ func getArtistHyperlinks(root *html.Node) []*html.Node {
 }
 
 func (investigator *Investigator) getArtists(letter_url string) {
-
-	// set caught up expression
-	expression, _ := regexp.Compile("^" + investigator.start + ".*$")
 
 	// set regular expression for letter suburls
 	artists, _ := regexp.Compile("^artist/.*$")
@@ -131,14 +124,6 @@ func (investigator *Investigator) getArtists(letter_url string) {
 			var artist_name string
 			if link.FirstChild != nil {
 				artist_name = link.FirstChild.Data
-			}
-
-			// check if caught up
-			if expression.MatchString(artist_name) {
-				investigator.caught_up = true
-			}
-			if !investigator.caught_up {
-				continue
 			}
 
 			// parse the artist
