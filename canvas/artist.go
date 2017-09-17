@@ -22,15 +22,15 @@ func initArtists() {
 	}
 }
 
-func AddArtist(name string) {
+func PutArtist(artist Artist) {
 
 	tx, err := db.Begin()
 	stmt, err := tx.Prepare("insert or replace into artists (name) values (?)")
 	defer stmt.Close()
-	_, err = stmt.Exec(name)
+	_, err = stmt.Exec(artist.Name)
 	tx.Commit()
 
 	if err != nil {
-		log.Println("Failed to add artist", name+":", err)
+		log.Println("Failed to add artist", artist.Name+":", err)
 	}
 }

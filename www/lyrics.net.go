@@ -37,7 +37,7 @@ func inASCIIupper(str string) bool {
 func New(start string) *Investigator {
 
 	investigator := new(Investigator)
-	canvas.New("lyrics.net")
+	canvas.Init()
 
 	if inASCIIupper(start) {
 		investigator.expression = "^/artists/[" + string(start[0]) + "-Z]$"
@@ -165,7 +165,10 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 
 						// add artist
 						if !artistAdded {
-							canvas.AddArtist(artist_name)
+							canvas.PutArtist(canvas.Artist{
+								Url:  artist_url,
+								Name: artist_name,
+							})
 							artistAdded = true
 						}
 
@@ -183,7 +186,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 						name := z.Token().Data
 
 						// add album
-						investigator.canvas.PutAlbum(canvas.Album{
+						canvas.PutAlbum(canvas.Album{
 							Artist: nil, // TODO
 
 							Url:  album_url,
@@ -335,6 +338,12 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
 	}); ok {
 		lyrics := scrape.Text(lyrics_root)
-		canvas.AddSong(album_title, song_title, lyrics)
+		canvas.PutSong(canvas.Song{
+			Album: nil, // TODO album_title,
+
+			Url:    song_url,
+			Name:   song_title,
+			Lyrics: lyrics,
+		})
 	}
 }
