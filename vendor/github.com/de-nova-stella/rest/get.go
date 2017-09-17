@@ -25,7 +25,7 @@ func Get(name string) (io.ReadCloser, bool) {
 		switch resp.StatusCode {
 
 		case http.StatusOK:
-			return &resp.Body, true
+			return resp.Body, true
 		case http.StatusForbidden:
 			resp.Body.Close()
 			return nil, false

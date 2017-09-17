@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/de-nova-stella/rest"
   packages = ["."]
-  revision = "97955ea81e06851ec02bb6ef610424b63b58f43b"
+  revision = "37a610cd33fc7855038e5480a2595672502a6a48"
 
 [[projects]]
   name = "github.com/mattn/go-sqlite3"

@@ -14,7 +14,8 @@ func main() {
 
 	// start the investigation
 	wittgenstein := lyrics_net.Investigator{
-		URL: "http://www.lyrics.net",
+		URL:   "http://www.lyrics.net",
+		Start: *start,
 	}
-	wittgenstein.Investigate(*start)
+	wittgenstein.Investigate()
 }

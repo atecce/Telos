@@ -15,23 +15,24 @@ import (
 )
 
 type Investigator struct {
-	URL string
+	URL   string
+	Start string
 
 	canvas    *canvas.Canvas
 	wg        sync.WaitGroup
 	caught_up bool
 }
 
-func inASCIIupper(start string) bool {
+func inASCIIupper(str string) bool {
 	for _, char := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-		if string(char) == string(start[0]) {
+		if string(char) == string(str[0]) {
 			return true
 		}
 	}
 	return false
 }
 
-func (investigator *Investigator) Investigate(start string) {
+func (investigator *Investigator) Investigate() {
 
 	investigator.canvas = canvas.New("lyrics_net")
 
@@ -57,22 +58,22 @@ func (investigator *Investigator) Investigate(start string) {
 			// set token
 			t := z.Token()
 
-			if letterLink, ok := investigator.getLetterLink(start, &t); ok {
+			if letterLink, ok := investigator.getLetterLink(&t); ok {
 
 				// get artists
-				investigator.getArtists(start, letterLink)
+				investigator.getArtists(letterLink)
 
 			}
 		}
 	}
 }
 
-func (investigator *Investigator) getLetterLink(start string, t *html.Token) (string, bool) {
+func (investigator *Investigator) getLetterLink(t *html.Token) (string, bool) {
 
 	// use specified start letter
 	var expression string
-	if inASCIIupper(start) {
-		expression = "^/artists/[" + string(start[0]) + "-Z]$"
+	if inASCIIupper(investigator.Start) {
+		expression = "^/artists/[" + string(investigator.Start[0]) + "-Z]$"
 	} else {
 		expression = "^/artists/[0A-Z]$"
 	}
@@ -99,11 +100,11 @@ func getArtistHyperlinks(root *html.Node) []*html.Node {
 	})
 }
 
-func (investigator *Investigator) getArtists(start, letter_url string) {
+func (investigator *Investigator) getArtists(letter_url string) {
 
 	// set caught up expression
-	expression, _ := regexp.Compile("^" + start + ".*$")
-	if start == "0" {
+	expression, _ := regexp.Compile("^" + investigator.Start + ".*$")
+	if investigator.Start == "0" {
 		investigator.caught_up = true
 	}
 
