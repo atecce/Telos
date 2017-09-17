@@ -14,20 +14,23 @@ type Canvas struct {
 }
 
 type Artist struct {
-	name string
+	Url  string
+	Name string
 }
 
 type Album struct {
-	artist *Artist
+	Artist *Artist
 
-	name string
+	Url  string
+	Name string
 }
 
 type Song struct {
-	album *Album
+	Album *Album
 
-	name   string
-	lyrics string
+	Url    string
+	Name   string
+	Lyrics string
 }
 
 func initArtists() {
@@ -92,6 +95,26 @@ func (canvas *Canvas) AddArtist(name string) {
 	if err != nil {
 		log.Println("Failed to add artist", name+":", err)
 	}
+}
+
+func (canvas *Canvas) PutAlbum(album Album) {
+
+	tx, err := canvas.db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	stmt, err := tx.Prepare("insert or replace into albums (artist, name) values (?, ?)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(album.Artist, album.Name)
+	if err != nil {
+		log.Fatal(res, err)
+	}
+	tx.Commit()
 }
 
 func (canvas *Canvas) AddAlbum(artist, name string) {

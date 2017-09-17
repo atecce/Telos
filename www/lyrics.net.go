@@ -180,17 +180,22 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 
 						// album titles are the next token
 						z.Next()
-						album_title := z.Token().Data
+						name := z.Token().Data
 
 						// add album
-						canvas.AddAlbum(artist_name, album_title)
+						investigator.canvas.PutAlbum(canvas.Album{
+							Artist: nil, // TODO
+
+							Url:  album_url,
+							Name: name,
+						})
 
 						// parse album
-						dorothy := investigator.parseAlbum(album_url, album_title)
+						dorothy := investigator.parseAlbum(album_url, name)
 
 						// handle dorothy
 						if dorothy {
-							investigator.no_place(album_title, z)
+							investigator.no_place(name, z)
 						}
 					}
 				}
