@@ -32,45 +32,33 @@ func inASCIIupper(str string) bool {
 	return false
 }
 
-func (investigator *Investigator) Investigate() {
+func (investigator *Investigator) Run() {
 
 	investigator.canvas = canvas.New("lyrics_net")
 
-	// get body
 	b, ok := rest.Get(investigator.URL)
 	if !ok {
 		return
 	}
 	defer b.Close()
 
-	// parse page
 	z := html.NewTokenizer(b)
 	for {
 		switch z.Next() {
 
-		// end of html document
 		case html.ErrorToken:
 			return
 
-		// catch start tags
 		case html.StartTagToken:
-
-			// set token
-			t := z.Token()
-
-			if letterLink, ok := investigator.getLetterLink(&t); ok {
-
-				// get artists
+			if letterLink, ok := investigator.getLetterLink(z.Token()); ok {
 				investigator.getArtists(letterLink)
-
 			}
 		}
 	}
 }
 
-func (investigator *Investigator) getLetterLink(t *html.Token) (string, bool) {
+func (investigator *Investigator) getLetterLink(t html.Token) (string, bool) {
 
-	// use specified start letter
 	var expression string
 	if inASCIIupper(investigator.Start) {
 		expression = "^/artists/[" + string(investigator.Start[0]) + "-Z]$"
@@ -78,7 +66,6 @@ func (investigator *Investigator) getLetterLink(t *html.Token) (string, bool) {
 		expression = "^/artists/[0A-Z]$"
 	}
 
-	// set regular expression for letter suburls
 	letters, _ := regexp.Compile(expression)
 
 	if t.Data == "a" {

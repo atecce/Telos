@@ -17,5 +17,5 @@ func main() {
 		URL:   "http://www.lyrics.net",
 		Start: *start,
 	}
-	wittgenstein.Investigate()
+	wittgenstein.Run()
 }
