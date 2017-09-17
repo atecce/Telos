@@ -3,6 +3,7 @@ package canvas
 import (
 	"log"
 
+	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -30,20 +31,30 @@ func initAlbums() {
 
 func PutAlbum(album Album) {
 
-	tx, err := db.Begin()
-	if err != nil {
-		log.Fatal(err)
+	tx := begin()
+	if tx == nil {
+		return
 	}
 
 	stmt, err := tx.Prepare("insert or replace into albums (artist, name) values (?, ?)")
 	if err != nil {
-		log.Fatal(err)
+		log.Println("[ERROR] preparing stmt for album", album)
+		pretty.Logln("[DEBUG] on tx", tx, "with err", err)
 	}
-	defer stmt.Close()
 
-	res, err := stmt.Exec(album.Artist, album.Name)
+	_, err = stmt.Exec(album.Artist, album.Name)
 	if err != nil {
-		log.Fatal(res, err)
+		log.Println("[ERROR] execing stmt for album", album)
+		pretty.Logln("[DEBUG] on stmt", stmt, "with err", err)
 	}
-	tx.Commit()
+
+	if err := tx.Commit(); err != nil {
+		log.Println("[ERROR] committing tx for album", album)
+		pretty.Logln("[DEBUG] on tx", tx, "with err", err)
+	}
+
+	if err := stmt.Close(); err != nil {
+		log.Println("[ERROR] closing stmt for album", album)
+		pretty.Logln("[DEBUG] on stmt", stmt, "with err", err)
+	}
 }

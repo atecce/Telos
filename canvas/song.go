@@ -33,9 +33,9 @@ func initSongs() {
 
 func PutSong(song Song) {
 
-	tx, err := db.Begin()
-	if err != nil {
-		log.Fatal(err)
+	tx := begin()
+	if tx == nil {
+		return
 	}
 
 	var failed bool
@@ -44,7 +44,7 @@ func PutSong(song Song) {
 		stmt, err := tx.Prepare("insert or replace into songs (album, name, lyrics) values (?, ?, ?)")
 		if err != nil {
 			failed = true
-			log.Println("Error in .Prepare: Failed to add song", song.Name, "in album", song.Album.Name+":", err)
+			log.Println("[ERROR] preparing", song.Name, "for album", song.Album.Name+":", err)
 			time.Sleep(time.Second)
 			continue
 		}
@@ -53,14 +53,14 @@ func PutSong(song Song) {
 		_, err = stmt.Exec(song.Album.Name, song.Name, song.Lyrics)
 		if err != nil {
 			failed = true
-			log.Println("Error in .Exec: Failed to add song", song.Name, "in album", song.Album.Name+":", err)
+			log.Println("[ERROR] execing", song.Name, "for album", song.Album.Name+":", err)
 			time.Sleep(time.Second)
 			continue
 		}
 		tx.Commit()
 
 		if failed {
-			log.Println("Successfully added song", song.Name, "in album", song.Album.Name)
+			log.Println("[INFO] successfully added", song.Name, "to album", song.Album.Name)
 		}
 		return
 	}

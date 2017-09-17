@@ -3,6 +3,7 @@ package canvas
 import (
 	"log"
 
+	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -12,25 +13,40 @@ type Artist struct {
 }
 
 func initArtists() {
-	_, err := db.Exec(`create table if not exists artists (
+	if res, err := db.Exec(`create table if not exists artists (
 
 				      name text not null,
 
-				      primary key (name))`)
-	if err != nil {
-		panic(err)
+				      primary key (name))`); err != nil {
+		pretty.Logln("[FATAL] initializing artists")
+		log.Fatal(res, err)
 	}
 }
 
 func PutArtist(artist Artist) {
 
-	tx, err := db.Begin()
-	stmt, err := tx.Prepare("insert or replace into artists (name) values (?)")
-	defer stmt.Close()
-	_, err = stmt.Exec(artist.Name)
-	tx.Commit()
+	tx := begin()
+	if tx == nil {
+		return
+	}
 
+	stmt, err := tx.Prepare("insert or replace into artists (name) values (?)")
 	if err != nil {
-		log.Println("Failed to add artist", artist.Name+":", err)
+		pretty.Logln("[ERROR] preparing stmt for artist", artist)
+		pretty.Logln("[INFO]", stmt, err)
+		return
+	}
+	defer stmt.Close()
+
+	if res, err := stmt.Exec(artist.Name); err != nil {
+		pretty.Logln("[ERROR] execing stmt for artist", artist)
+		pretty.Logln("[INFO]", res, err)
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		pretty.Logln("[ERROR] committing tx for artist", artist)
+		pretty.Logln("[INFO]", err)
+		return
 	}
 }
