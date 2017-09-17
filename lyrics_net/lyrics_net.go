@@ -14,9 +14,10 @@ import (
 	"github.com/de-nova-stella/rest"
 )
 
+const domain = "http://www.lyrics.net"
+
 type Investigator struct {
-	URL   string
-	Start string
+	start string
 
 	canvas    *canvas.Canvas
 	wg        sync.WaitGroup
@@ -32,11 +33,19 @@ func inASCIIupper(str string) bool {
 	return false
 }
 
+func New(start string) *Investigator {
+	investigator := new(Investigator)
+	if start == "0" {
+		investigator.caught_up = true
+	}
+	investigator.start = start
+	investigator.canvas = canvas.New("lyrics_net")
+	return investigator
+}
+
 func (investigator *Investigator) Run() {
 
-	investigator.canvas = canvas.New("lyrics_net")
-
-	b, ok := rest.Get(investigator.URL)
+	b, ok := rest.Get(domain)
 	if !ok {
 		return
 	}
@@ -60,8 +69,8 @@ func (investigator *Investigator) Run() {
 func (investigator *Investigator) getLetterLink(t html.Token) (string, bool) {
 
 	var expression string
-	if inASCIIupper(investigator.Start) {
-		expression = "^/artists/[" + string(investigator.Start[0]) + "-Z]$"
+	if inASCIIupper(investigator.start) {
+		expression = "^/artists/[" + string(investigator.start[0]) + "-Z]$"
 	} else {
 		expression = "^/artists/[0A-Z]$"
 	}
@@ -71,7 +80,7 @@ func (investigator *Investigator) getLetterLink(t html.Token) (string, bool) {
 	if t.Data == "a" {
 		for _, a := range t.Attr {
 			if a.Key == "href" && letters.MatchString(a.Val) {
-				return investigator.URL + a.Val + "/99999", true
+				return domain + a.Val + "/99999", true
 			}
 		}
 	}
@@ -90,10 +99,7 @@ func getArtistHyperlinks(root *html.Node) []*html.Node {
 func (investigator *Investigator) getArtists(letter_url string) {
 
 	// set caught up expression
-	expression, _ := regexp.Compile("^" + investigator.Start + ".*$")
-	if investigator.Start == "0" {
-		investigator.caught_up = true
-	}
+	expression, _ := regexp.Compile("^" + investigator.start + ".*$")
 
 	// set regular expression for letter suburls
 	artists, _ := regexp.Compile("^artist/.*$")
@@ -119,7 +125,7 @@ func (investigator *Investigator) getArtists(letter_url string) {
 		if artists.MatchString(artist_suburl) {
 
 			// concatenate artist url
-			artist_url := investigator.URL + "/" + artist_suburl
+			artist_url := domain + "/" + artist_suburl
 
 			// extract artist name
 			var artist_name string
@@ -184,7 +190,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 						z.Next()
 						for _, album_attribute := range z.Token().Attr {
 							if album_attribute.Key == "href" {
-								album_url = investigator.URL + album_attribute.Val
+								album_url = domain + album_attribute.Val
 							}
 						}
 
@@ -236,7 +242,7 @@ func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer
 				if a.Key == "href" {
 
 					// concatenate the url
-					song_url := investigator.URL + a.Val
+					song_url := domain + a.Val
 
 					// next token is artist name
 					z.Next()
@@ -290,7 +296,7 @@ func (investigator *Investigator) parseAlbum(album_url, album_title string) bool
 
 	// scrape links
 	for _, link := range song_links {
-		song_url := investigator.URL + scrape.Attr(link, "href")
+		song_url := domain + scrape.Attr(link, "href")
 
 		// title is first child
 		var song_title string
