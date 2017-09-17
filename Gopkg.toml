@@ -22,10 +22,6 @@
 
 
 [[constraint]]
-  branch = "develop"
-  name = "github.com/de-nova-stella/investigations"
-
-[[constraint]]
   branch = "master"
   name = "github.com/de-nova-stella/rest"
 

@@ -43,7 +43,7 @@ func (investigator *Investigator) Investigate(start string) {
 	defer b.Close()
 
 	// parse page
-	z := html.NewTokenizer(*b)
+	z := html.NewTokenizer(b)
 	for {
 		switch z.Next() {
 
@@ -57,20 +57,17 @@ func (investigator *Investigator) Investigate(start string) {
 			// set token
 			t := z.Token()
 
-			if isLetterHyperlink(start, &t) {
-
-				// concatenate the url
-				letter_url := investigator.URL + a.Val + "/99999"
+			if letterLink, ok := investigator.getLetterLink(start, &t); ok {
 
 				// get artists
-				investigator.getArtists(start, letter_url)
+				investigator.getArtists(start, letterLink)
 
 			}
 		}
 	}
 }
 
-func isLetterHyperlink(start string, t *html.Token) bool {
+func (investigator *Investigator) getLetterLink(start string, t *html.Token) (string, bool) {
 
 	// use specified start letter
 	var expression string
@@ -86,14 +83,14 @@ func isLetterHyperlink(start string, t *html.Token) bool {
 	if t.Data == "a" {
 		for _, a := range t.Attr {
 			if a.Key == "href" && letters.MatchString(a.Val) {
-				return true
+				return investigator.URL + a.Val + "/99999", true
 			}
 		}
 	}
-	return false
+	return "", false
 }
 
-func getArtistHyperlinks(root) *[]html.Node {
+func getArtistHyperlinks(root *html.Node) []*html.Node {
 	return scrape.FindAll(root, func(n *html.Node) bool {
 		if n.Parent != nil {
 			return n.Parent.Data == "strong" && n.Data == "a"
@@ -121,13 +118,13 @@ func (investigator *Investigator) getArtists(start, letter_url string) {
 	defer b.Close()
 
 	// parse page
-	root, err := html.Parse(*b)
+	root, err := html.Parse(b)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// find artist urls
-	for _, link := range getArtistHyperlinks {
+	for _, link := range getArtistHyperlinks(root) {
 
 		artist_suburl := scrape.Attr(link, "href")
 
@@ -169,7 +166,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 	defer b.Close()
 
 	// parse page
-	z := html.NewTokenizer(*b)
+	z := html.NewTokenizer(b)
 	for {
 		switch z.Next() {
 
@@ -266,7 +263,7 @@ func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer
 	}
 }
 
-func getSongHyperlinks(root *html.Node) *[]html.Node {
+func getSongHyperlinks(root *html.Node) []*html.Node {
 	return scrape.FindAll(root, func(n *html.Node) bool {
 		if n.Parent != nil {
 			return n.Parent.Data == "strong" && n.Data == "a"
@@ -338,7 +335,7 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 	defer b.Close()
 
 	// parse page
-	root, err := html.Parse(*b)
+	root, err := html.Parse(b)
 	if err != nil {
 		if operr, ok := err.(*net.OpError); ok {
 			if operr.Err.Error() == syscall.ECONNRESET.Error() {

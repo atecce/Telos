@@ -8,7 +8,7 @@ import (
 )
 
 // gets an http resource by name that you can read from
-func Get(name string) (*io.ReadCloser, bool) {
+func Get(name string) (io.ReadCloser, bool) {
 
 	// never stop trying
 	for {
