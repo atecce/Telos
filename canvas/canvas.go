@@ -15,7 +15,7 @@ type Canvas struct {
 
 func New(name string) *Canvas {
 
-	db, err := sql.Open("sqlite3", name+".db")
+	db, err := sql.Open("sqlite3", "/keybase/private/atec/"+name+".db")
 
 	_, err = db.Exec(`create table if not exists artists (
 
