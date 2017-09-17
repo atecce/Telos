@@ -5,7 +5,7 @@
   branch = "master"
   name = "github.com/atecce/investigations"
   packages = ["canvas"]
-  revision = "b6d1300c7dbaa04d2b3dbb6841445f141a892cd2"
+  revision = "407292ead0cc277bfe9cddadf4b8fa75f916dc97"
 
 [[projects]]
   branch = "develop"

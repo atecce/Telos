@@ -1,14 +1,11 @@
 package lyrics_net
 
 import (
-	"io"
 	"log"
 	"net"
-	"net/http"
 	"regexp"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
@@ -38,17 +35,6 @@ func (investigator *Investigator) Investigate(start string) {
 
 	investigator.canvas = canvas.New("lyrics_net")
 
-	// use specified start letter
-	var expression string
-	if inASCIIupper(start) {
-		expression = "^/artists/[" + string(start[0]) + "-Z]$"
-	} else {
-		expression = "^/artists/[0A-Z]$"
-	}
-
-	// set regular expression for letter suburls
-	letters, _ := regexp.Compile(expression)
-
 	// get body
 	b, ok := rest.Get(investigator.URL)
 	if !ok {
@@ -71,23 +57,40 @@ func (investigator *Investigator) Investigate(start string) {
 			// set token
 			t := z.Token()
 
-			// look for matching letter suburl
-			if t.Data == "a" {
-				for _, a := range t.Attr {
-					if a.Key == "href" {
-						if letters.MatchString(a.Val) {
+			if isLetterHyperlink(start, &t) {
 
-							// concatenate the url
-							letter_url := investigator.URL + a.Val + "/99999"
+				// concatenate the url
+				letter_url := investigator.URL + a.Val + "/99999"
 
-							// get artists
-							investigator.getArtists(start, letter_url)
-						}
-					}
-				}
+				// get artists
+				investigator.getArtists(start, letter_url)
+
 			}
 		}
 	}
+}
+
+func isLetterHyperlink(start string, t *html.Token) bool {
+
+	// use specified start letter
+	var expression string
+	if inASCIIupper(start) {
+		expression = "^/artists/[" + string(start[0]) + "-Z]$"
+	} else {
+		expression = "^/artists/[0A-Z]$"
+	}
+
+	// set regular expression for letter suburls
+	letters, _ := regexp.Compile(expression)
+
+	if t.Data == "a" {
+		for _, a := range t.Attr {
+			if a.Key == "href" && letters.MatchString(a.Val) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func getArtistHyperlinks(root) *[]html.Node {
