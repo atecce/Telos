@@ -11,7 +11,7 @@ import (
 var db *sql.DB
 
 func Init() {
-	database, err := sql.Open("sqlite3", "lyrics.net.db")
+	database, err := sql.Open("sqlite3", "/keybase/private/atec/lyrics.net.db")
 	if err != nil {
 		pretty.Logln("[FATAL] failed to initialize db")
 		log.Fatal(err)
