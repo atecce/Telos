@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"github.com/atecce/investigations/lyrics_net"
+	"github.com/de-nova-stella/investigations/lyrics_net"
 )
 
 func main() {

@@ -1,6 +1,7 @@
 package lyrics_net
 
 import (
+	"errors"
 	"io"
 	"log"
 	"net"
@@ -10,11 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/atecce/investigations/canvas"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
-
-	"github.com/de-nova-stella/investigations/canvas"
-	"github.com/de-nova-stella/rest"
 )
 
 type Investigator struct {
@@ -23,6 +23,49 @@ type Investigator struct {
 	canvas    *canvas.Canvas
 	wg        sync.WaitGroup
 	caught_up bool
+}
+
+// should only return errors related to HTTP status codes.
+// otherwise, it handles all it’s connection errors
+// internally
+func communicate(url string) (io.ReadCloser, error) {
+
+	// never stop trying
+	for {
+
+		// get url
+		resp, err := http.Get(url)
+
+		// catch error
+		if err != nil {
+			log.Println(err)
+			time.Sleep(time.Second)
+			continue
+		}
+
+		// write status to output
+		log.Println(url, resp.Status)
+
+		// check status codes
+		switch resp.StatusCode {
+
+		// cases which are returned
+		case http.StatusOK:
+			return resp.Body, nil
+		case http.StatusForbidden:
+			return nil, errors.New("forbidden")
+		case http.StatusNotFound:
+			return nil, errors.New("not found")
+
+		// cases which are retried
+		case http.StatusServiceUnavailable:
+			time.Sleep(10 * time.Minute)
+		case http.StatusGatewayTimeout:
+			time.Sleep(time.Minute)
+		default:
+			time.Sleep(time.Minute)
+		}
+	}
 }
 
 func inASCIIupper(start string) bool {
@@ -36,6 +79,7 @@ func inASCIIupper(start string) bool {
 
 func (investigator *Investigator) Investigate(start string) {
 
+	// initiate db
 	investigator.canvas = canvas.New("lyrics_net")
 
 	// use specified start letter
@@ -49,54 +93,33 @@ func (investigator *Investigator) Investigate(start string) {
 	// set regular expression for letter suburls
 	letters, _ := regexp.Compile(expression)
 
-	// get body
-	b, ok := rest.Get(investigator.URL)
-	if !ok {
+	// set body
+	b, err := communicate(investigator.URL)
+	if err != nil {
+		log.Println(investigator.URL, err)
 		return
 	}
 	defer b.Close()
 
 	// parse page
-	z := html.NewTokenizer(*b)
-	for {
-		switch z.Next() {
-
-		// end of html document
-		case html.ErrorToken:
-			return
-
-		// catch start tags
-		case html.StartTagToken:
-
-			// set token
-			t := z.Token()
-
-			// look for matching letter suburl
-			if t.Data == "a" {
-				for _, a := range t.Attr {
-					if a.Key == "href" {
-						if letters.MatchString(a.Val) {
-
-							// concatenate the url
-							letter_url := investigator.URL + a.Val + "/99999"
-
-							// get artists
-							investigator.getArtists(start, letter_url)
-						}
-					}
-				}
-			}
-		}
+	root, err := html.Parse(b)
+	if err != nil {
+		log.Fatal(err)
 	}
-}
 
-func getArtistHyperlinks(root) *[]html.Node {
-	return scrape.FindAll(root, func(n *html.Node) bool {
-		if n.Parent != nil {
-			return n.Parent.Data == "strong" && n.Data == "a"
+	// find letter urls
+	letter_urls := scrape.FindAll(root, func(n *html.Node) bool {
+		if n.Data == "a" {
+			return letters.MatchString(scrape.Attr(n, "href"))
 		}
 		return false
 	})
+
+	// investigate letters
+	for _, url := range letter_urls {
+		letter_url := investigator.URL + scrape.Attr(url, "href") + "/99999"
+		investigator.getArtists(start, letter_url)
+	}
 }
 
 func (investigator *Investigator) getArtists(start, letter_url string) {
@@ -111,20 +134,27 @@ func (investigator *Investigator) getArtists(start, letter_url string) {
 	artists, _ := regexp.Compile("^artist/.*$")
 
 	// set body
-	b, ok := rest.Get(letter_url)
-	if !ok {
+	b, err := communicate(letter_url)
+	if err != nil {
+		log.Println(letter_url, err)
 		return
 	}
 	defer b.Close()
 
 	// parse page
-	root, err := html.Parse(*b)
+	root, err := html.Parse(b)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// find artist urls
-	for _, link := range getArtistHyperlinks {
+	artist_links := scrape.FindAll(root, func(n *html.Node) bool {
+		if n.Parent != nil {
+			return n.Parent.Data == "strong" && n.Data == "a"
+		}
+		return false
+	})
+	for _, link := range artist_links {
 
 		artist_suburl := scrape.Attr(link, "href")
 
@@ -158,15 +188,16 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 	// initialize artist flag
 	var artistAdded bool
 
-	// get body
-	b, ok := rest.Get(artist_url)
-	if !ok {
+	// set body
+	b, err := communicate(artist_url)
+	if err != nil {
+		log.Println(artist_url, err)
 		return
 	}
 	defer b.Close()
 
 	// parse page
-	z := html.NewTokenizer(*b)
+	z := html.NewTokenizer(b)
 	for {
 		switch z.Next() {
 
@@ -208,10 +239,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 						investigator.canvas.AddAlbum(artist_name, album_title)
 
 						// parse album
-						dorothy := investigator.parseAlbum(album_url, album_title)
-
-						// handle dorothy
-						if dorothy {
+						if dorothy := investigator.parseAlbum(album_url, album_title); dorothy {
 							investigator.no_place(album_title, z)
 						}
 					}
@@ -263,20 +291,12 @@ func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer
 	}
 }
 
-func getSongHyperlinks(root *html.Node) *[]html.Node {
-	return scrape.FindAll(root, func(n *html.Node) bool {
-		if n.Parent != nil {
-			return n.Parent.Data == "strong" && n.Data == "a"
-		}
-		return false
-	})
-}
-
 func (investigator *Investigator) parseAlbum(album_url, album_title string) bool {
 
-	// get body
-	b, ok := rest.Get(album_url)
-	if !ok {
+	// set body
+	b, err := communicate(album_url)
+	if err != nil {
+		log.Println(album_url, err)
 		return false
 	}
 	defer b.Close()
@@ -295,7 +315,14 @@ func (investigator *Investigator) parseAlbum(album_url, album_title string) bool
 	}
 
 	// find song links
-	song_links := getSongHyperlinks(root)
+	song_links := scrape.FindAll(root, func(n *html.Node) bool {
+		if n.Parent != nil {
+			return n.Parent.Data == "strong" && n.Data == "a"
+		}
+		return false
+	})
+
+	// return if no songs
 	if len(song_links) == 0 {
 		return true
 	}
@@ -327,15 +354,16 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 	// finish job at the end of function call
 	defer investigator.wg.Done()
 
-	// get body
-	b, ok := rest.Get(song_url)
-	if !ok {
+	// set body
+	b, err := communicate(song_url)
+	if err != nil {
+		log.Println(song_url, err)
 		return
 	}
 	defer b.Close()
 
 	// parse page
-	root, err := html.Parse(*b)
+	root, err := html.Parse(b)
 	if err != nil {
 		if operr, ok := err.(*net.OpError); ok {
 			if operr.Err.Error() == syscall.ECONNRESET.Error() {
