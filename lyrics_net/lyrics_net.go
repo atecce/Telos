@@ -10,12 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"git.atec.pub/rest"
-
-	"github.com/atecce/investigations/canvas"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
+
+	"github.com/de-nova-stella/investigations/canvas"
+	"github.com/de-nova-stella/rest"
 )
 
 type Investigator struct {

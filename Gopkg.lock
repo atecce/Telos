@@ -4,8 +4,20 @@
 [[projects]]
   branch = "master"
   name = "github.com/atecce/investigations"
+  packages = ["canvas"]
+  revision = "f29b9886d5d819d435d382ecbe6c70421e1bce3d"
+
+[[projects]]
+  branch = "develop"
+  name = "github.com/de-nova-stella/investigations"
   packages = ["canvas","lyrics_net"]
-  revision = "bb17cee2d30c24bb51a04530de2e4abd8ec0b8bc"
+  revision = "b6842d47222feb24b770c9950d238ea007fc238e"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/de-nova-stella/rest"
+  packages = ["."]
+  revision = "3a662aedbe349b9595bbb211332c910e0cefb6b3"
 
 [[projects]]
   name = "github.com/mattn/go-sqlite3"
@@ -20,13 +32,14 @@
   revision = "24b7890b0945459dbf91743e4d2ac5d75a51fee2"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/net"
   packages = ["context","html","html/atom"]
-  revision = "a6577fac2d73be281a500b310739095313165611"
+  revision = "8351a756f30f1297fe94bbf4b767ec589c6ea6d0"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0b954a64bd5b9907af0ca3a9378e530b380925b371de0496430c057395e97459"
+  inputs-digest = "4b048506aced6fbd7f70756296a5f1e8dabfee1860b8c8c549765818c34fad18"
   solver-name = "gps-cdcl"
   solver-version = 1

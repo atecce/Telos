@@ -22,13 +22,21 @@
 
 
 [[constraint]]
+  branch = "develop"
+  name = "github.com/de-nova-stella/investigations"
+
+[[constraint]]
   branch = "master"
-  name = "github.com/atecce/investigations"
+  name = "github.com/de-nova-stella/rest"
 
 [[constraint]]
   name = "github.com/mattn/go-sqlite3"
-  version = ">=1.2.0, <=69.0.0-g866c329"
+  version = "1.2.0"
 
 [[constraint]]
   branch = "master"
   name = "github.com/yhat/scrape"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/net"
