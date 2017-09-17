@@ -163,12 +163,14 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 				for _, a := range t.Attr {
 					if a.Key == "class" && a.Val == "artist-album-label" {
 
+						artist := &canvas.Artist{
+							Url:  artist_url,
+							Name: artist_name,
+						}
+
 						// add artist
 						if !artistAdded {
-							canvas.PutArtist(canvas.Artist{
-								Url:  artist_url,
-								Name: artist_name,
-							})
+							canvas.PutArtist(*artist)
 							artistAdded = true
 						}
 
@@ -185,20 +187,22 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 						z.Next()
 						name := z.Token().Data
 
-						// add album
-						canvas.PutAlbum(canvas.Album{
-							Artist: nil, // TODO
+						album := &canvas.Album{
+							Artist: artist,
 
 							Url:  album_url,
 							Name: name,
-						})
+						}
+
+						// add album
+						canvas.PutAlbum(*album)
 
 						// parse album
-						dorothy := investigator.parseAlbum(album_url, name)
+						dorothy := investigator.parseAlbum(album)
 
 						// handle dorothy
 						if dorothy {
-							investigator.no_place(name, z)
+							investigator.no_place(album, z)
 						}
 					}
 				}
@@ -207,7 +211,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 	}
 }
 
-func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer) {
+func (investigator *Investigator) no_place(album *canvas.Album, z *html.Tokenizer) {
 
 	// parse album from artist page
 	for {
@@ -242,7 +246,7 @@ func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer
 
 					// parse song
 					investigator.wg.Add(1)
-					go investigator.parseSong(song_url, song_title, album_title)
+					go investigator.parseSong(song_url, song_title, album)
 				}
 			}
 		}
@@ -258,10 +262,10 @@ func getSongLinks(root *html.Node) []*html.Node {
 	})
 }
 
-func (investigator *Investigator) parseAlbum(album_url, album_title string) bool {
+func (investigator *Investigator) parseAlbum(album *canvas.Album) bool {
 
 	// get body
-	b, ok := rest.Get(album_url)
+	b, ok := rest.Get(album.Url)
 	if !ok {
 		return false
 	}
@@ -300,7 +304,7 @@ func (investigator *Investigator) parseAlbum(album_url, album_title string) bool
 
 		// parse songs
 		investigator.wg.Add(1)
-		go investigator.parseSong(song_url, song_title, album_title)
+		go investigator.parseSong(song_url, song_title, album)
 	}
 
 	// wait for songs
@@ -308,7 +312,7 @@ func (investigator *Investigator) parseAlbum(album_url, album_title string) bool
 	return false
 }
 
-func (investigator *Investigator) parseSong(song_url, song_title, album_title string) {
+func (investigator *Investigator) parseSong(song_url, song_title string, album *canvas.Album) {
 
 	// finish job at the end of function call
 	defer investigator.wg.Done()
@@ -326,7 +330,7 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 		if operr, ok := err.(*net.OpError); ok {
 			if operr.Err.Error() == syscall.ECONNRESET.Error() {
 				investigator.wg.Add(1)
-				investigator.parseSong(song_url, song_title, album_title)
+				investigator.parseSong(song_url, song_title, album)
 				return
 			}
 		}
