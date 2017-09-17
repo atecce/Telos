@@ -69,7 +69,7 @@ func (artist *Artist) Parse(wg *sync.WaitGroup) {
 						z.Next()
 						for _, album_attribute := range z.Token().Attr {
 							if album_attribute.Key == "href" {
-								album_url = "http://www.lyrics.net" + album_attribute.Val
+								album_url = domain + album_attribute.Val
 							}
 						}
 
@@ -126,7 +126,7 @@ func no_place(album *Album, z *html.Tokenizer, wg *sync.WaitGroup) {
 				if a.Key == "href" {
 
 					// concatenate the url
-					song_url := "http://www.lyrics.net" + a.Val
+					song_url := domain + a.Val
 
 					// next token is artist name
 					z.Next()

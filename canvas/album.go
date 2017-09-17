@@ -63,7 +63,7 @@ func (album *Album) Parse(wg *sync.WaitGroup) bool {
 
 	// scrape links
 	for _, link := range song_links {
-		song_url := "http://www.lyrics.net" + scrape.Attr(link, "href")
+		song_url := domain + scrape.Attr(link, "href")
 
 		// title is first child
 		var song_title string

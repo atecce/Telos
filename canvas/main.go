@@ -8,6 +8,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const domain = "http://www.lyrics.net"
+
 var db *sql.DB
 
 func Init() {
