@@ -22,8 +22,7 @@ var artists = regexp.MustCompile("^artist/.*$")
 type Investigator struct {
 	expression string
 
-	canvas *canvas.Canvas
-	wg     sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 func inASCIIupper(str string) bool {
@@ -38,7 +37,7 @@ func inASCIIupper(str string) bool {
 func New(start string) *Investigator {
 
 	investigator := new(Investigator)
-	investigator.canvas = canvas.New("lyrics.net")
+	canvas.New("lyrics.net")
 
 	if inASCIIupper(start) {
 		investigator.expression = "^/artists/[" + string(start[0]) + "-Z]$"
@@ -166,7 +165,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 
 						// add artist
 						if !artistAdded {
-							investigator.canvas.AddArtist(artist_name)
+							canvas.AddArtist(artist_name)
 							artistAdded = true
 						}
 
@@ -184,7 +183,7 @@ func (investigator *Investigator) parseArtist(artist_url, artist_name string) {
 						album_title := z.Token().Data
 
 						// add album
-						investigator.canvas.AddAlbum(artist_name, album_title)
+						canvas.AddAlbum(artist_name, album_title)
 
 						// parse album
 						dorothy := investigator.parseAlbum(album_url, album_title)
@@ -331,6 +330,6 @@ func (investigator *Investigator) parseSong(song_url, song_title, album_title st
 		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
 	}); ok {
 		lyrics := scrape.Text(lyrics_root)
-		investigator.canvas.AddSong(album_title, song_title, lyrics)
+		canvas.AddSong(album_title, song_title, lyrics)
 	}
 }

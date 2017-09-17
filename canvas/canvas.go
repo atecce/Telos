@@ -30,17 +30,19 @@ type Song struct {
 	lyrics string
 }
 
-func New(name string) *Canvas {
-
-	db, err := sql.Open("sqlite3", name+".db")
-
-	_, err = db.Exec(`create table if not exists artists (
+func initArtists() {
+	_, err := db.Exec(`create table if not exists artists (
 
 				      name text not null,
 
 				      primary key (name))`)
+	if err != nil {
+		panic(err)
+	}
+}
 
-	_, err = db.Exec(`create table if not exists albums (
+func initAlbums() {
+	_, err := db.Exec(`create table if not exists albums (
 
 				     artist	 text not null,
 
@@ -48,8 +50,14 @@ func New(name string) *Canvas {
 
 				     primary key (name, artist),
 				     foreign key (artist) references artists (name))`)
+	if err != nil {
+		panic(err)
+	}
 
-	_, err = db.Exec(`create table if not exists songs (
+}
+
+func initSongs() {
+	_, err := db.Exec(`create table if not exists songs (
 
 				     album 	 text not null,
 
@@ -62,11 +70,15 @@ func New(name string) *Canvas {
 	if err != nil {
 		log.Println("Failed to create tables:", err)
 	}
+}
 
-	return &Canvas{
-		db:   db,
-		name: name,
-	}
+var db, _ = sql.Open("sqlite3", "lyrics.net.db")
+
+func New(name string) {
+
+	initArtists()
+	initAlbums()
+	initSongs()
 }
 
 func (canvas *Canvas) AddArtist(name string) {
