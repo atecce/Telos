@@ -1,4 +1,4 @@
-package lyrics_net
+package www
 
 import (
 	"log"
@@ -15,6 +15,9 @@ import (
 )
 
 const domain = "http://www.lyrics.net"
+
+// set regular expression for letter suburls
+var artists = regexp.MustCompile("^artist/.*$")
 
 type Investigator struct {
 	expression string
@@ -35,7 +38,7 @@ func inASCIIupper(str string) bool {
 func New(start string) *Investigator {
 
 	investigator := new(Investigator)
-	investigator.canvas = canvas.New("lyrics_net")
+	investigator.canvas = canvas.New("lyrics.net")
 
 	if inASCIIupper(start) {
 		investigator.expression = "^/artists/[" + string(start[0]) + "-Z]$"
@@ -83,7 +86,7 @@ func (investigator *Investigator) getLetterLink(t html.Token) (string, bool) {
 	return "", false
 }
 
-func getArtistHyperlinks(root *html.Node) []*html.Node {
+func getArtistLinks(root *html.Node) []*html.Node {
 	return scrape.FindAll(root, func(n *html.Node) bool {
 		if n.Parent != nil {
 			return n.Parent.Data == "strong" && n.Data == "a"
@@ -93,9 +96,6 @@ func getArtistHyperlinks(root *html.Node) []*html.Node {
 }
 
 func (investigator *Investigator) getArtists(letter_url string) {
-
-	// set regular expression for letter suburls
-	artists, _ := regexp.Compile("^artist/.*$")
 
 	// set body
 	b, ok := rest.Get(letter_url)
@@ -111,7 +111,7 @@ func (investigator *Investigator) getArtists(letter_url string) {
 	}
 
 	// find artist urls
-	for _, link := range getArtistHyperlinks(root) {
+	for _, link := range getArtistLinks(root) {
 
 		artist_suburl := scrape.Attr(link, "href")
 
@@ -242,7 +242,7 @@ func (investigator *Investigator) no_place(album_title string, z *html.Tokenizer
 	}
 }
 
-func getSongHyperlinks(root *html.Node) []*html.Node {
+func getSongLinks(root *html.Node) []*html.Node {
 	return scrape.FindAll(root, func(n *html.Node) bool {
 		if n.Parent != nil {
 			return n.Parent.Data == "strong" && n.Data == "a"
@@ -274,7 +274,7 @@ func (investigator *Investigator) parseAlbum(album_url, album_title string) bool
 	}
 
 	// find song links
-	song_links := getSongHyperlinks(root)
+	song_links := getSongLinks(root)
 	if len(song_links) == 0 {
 		return true
 	}
