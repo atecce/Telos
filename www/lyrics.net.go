@@ -343,7 +343,7 @@ func (investigator *Investigator) parseSong(song_url, song_title string, album *
 	}); ok {
 		lyrics := scrape.Text(lyrics_root)
 		song := canvas.Song{
-			Album: nil, // TODO album_title,
+			Album: album,
 
 			Url:    song_url,
 			Name:   song_title,
