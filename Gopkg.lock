@@ -8,6 +8,18 @@
   revision = "37a610cd33fc7855038e5480a2595672502a6a48"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/kr/pretty"
+  packages = ["."]
+  revision = "cfb55aafdaf3ec08f0db22699ab822c50091b1c4"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/kr/text"
+  packages = ["."]
+  revision = "7cafcd837844e784b526369c9bce262804aebc60"
+
+[[projects]]
   name = "github.com/mattn/go-sqlite3"
   packages = ["."]
   revision = "ca5e3819723d8eeaf170ad510e7da1d6d2e94a08"
@@ -28,6 +40,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d260d21fa9f3e9dc4c375afcfaf296fccacceb9e557ef787601c03ac98e319d1"
+  inputs-digest = "b0ddc9d617f1f1c4d9c3f93be92df750cac712e6174d8e256de67a3d800208bc"
   solver-name = "gps-cdcl"
   solver-version = 1
