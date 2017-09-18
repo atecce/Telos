@@ -73,15 +73,6 @@ func (song *Song) Parse(wg *sync.WaitGroup) {
 	}
 }
 
-func getSongLinks(root *html.Node) []*html.Node {
-	return scrape.FindAll(root, func(n *html.Node) bool {
-		if n.Parent != nil {
-			return n.Parent.Data == "strong" && n.Data == "a"
-		}
-		return false
-	})
-}
-
 func (song *Song) put() {
 
 	tx := begin()

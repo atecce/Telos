@@ -3,14 +3,21 @@ package canvas
 import (
 	"database/sql"
 	"log"
+	"net/url"
 
 	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var db *sql.DB
+var (
+	db     *sql.DB
+	domain *url.URL
+)
 
 func Init() {
+
+	domain, _ = url.Parse("http://www.lyrics.net")
+
 	database, err := sql.Open("sqlite3", "/keybase/private/atec/lyrics.net.db")
 	if err != nil {
 		pretty.Logln("[FATAL] failed to initialize db")

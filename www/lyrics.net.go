@@ -14,7 +14,7 @@ import (
 	"github.com/de-nova-stella/rest"
 )
 
-const domain = "http://www.lyrics.net"
+var domain *url.URL
 
 type Investigator struct {
 
@@ -26,6 +26,7 @@ func New(start string) *Investigator {
 
 	investigator := new(Investigator)
 	investigator.wg = new(sync.WaitGroup)
+	domain, _ = url.Parse("http://www.lyrics.net")
 	canvas.Init()
 
 	return investigator
@@ -33,16 +34,14 @@ func New(start string) *Investigator {
 
 func (investigator *Investigator) Run() {
 
-	u, _ := url.Parse(domain)
-
 	for _, c := range "0ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+		u := *domain
 		u.Path = path.Join("artists", string(c), "99999")
-		investigator.getArtists(*u)
+		investigator.parseArtists(u)
 	}
-
 }
 
-func (investigator *Investigator) getArtists(u url.URL) {
+func (investigator *Investigator) parseArtists(u url.URL) {
 
 	// set body
 	b, ok := rest.Get(u.String())
@@ -59,7 +58,7 @@ func (investigator *Investigator) getArtists(u url.URL) {
 	}
 
 	// find artist urls
-	for _, link := range getArtistLinks(root) {
+	for _, link := range getArtists(root) {
 		if link.FirstChild != nil {
 			u.Path = scrape.Attr(link, "href")
 			artist := &canvas.Artist{
@@ -71,7 +70,7 @@ func (investigator *Investigator) getArtists(u url.URL) {
 	}
 }
 
-func getArtistLinks(root *html.Node) []*html.Node {
+func getArtists(root *html.Node) []*html.Node {
 	return scrape.FindAll(root, func(n *html.Node) bool {
 		if n.Parent != nil {
 			return n.Parent.Data == "strong" && n.Data == "a"

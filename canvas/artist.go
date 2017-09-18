@@ -65,32 +65,28 @@ func (artist *Artist) Parse(wg *sync.WaitGroup) {
 						}
 
 						// album links are next token
-						var album_url string
 						z.Next()
-						for _, album_attribute := range z.Token().Attr {
-							if album_attribute.Key == "href" {
-								album_url = "http://www.lyrics.net" + album_attribute.Val
+						for _, attr := range z.Token().Attr {
+							if attr.Key == "href" {
+
+								u := *domain
+								u.Path = attr.Val
+
+								// album titles are the next token
+								z.Next()
+								album := &Album{
+									Artist: artist,
+
+									Url:  u.String(),
+									Name: z.Token().Data,
+								}
+								album.put()
+
+								// parse album
+								if dorothy := album.Parse(wg); dorothy {
+									no_place(album, z, wg)
+								}
 							}
-						}
-
-						// album titles are the next token
-						z.Next()
-						album := &Album{
-							Artist: artist,
-
-							Url:  album_url,
-							Name: z.Token().Data,
-						}
-
-						// add album
-						album.put()
-
-						// parse album
-						dorothy := album.Parse(wg)
-
-						// handle dorothy
-						if dorothy {
-							no_place(album, z, wg)
 						}
 					}
 				}

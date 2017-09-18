@@ -56,37 +56,42 @@ func (album *Album) Parse(wg *sync.WaitGroup) bool {
 	}
 
 	// find song links
-	song_links := getSongLinks(root)
-	if len(song_links) == 0 {
+	songs := getSongs(root)
+	if len(songs) == 0 {
 		return true
 	}
 
 	// scrape links
-	for _, link := range song_links {
-		song_url := "http://www.lyrics.net" + scrape.Attr(link, "href")
+	for _, link := range songs {
 
 		// title is first child
-		var song_title string
 		if link.FirstChild != nil {
-			song_title = link.FirstChild.Data
-		} else {
-			panic(err)
-		}
 
-		// parse songs
-		wg.Add(1)
-		song := &Song{
-			Album: album,
+			u := *domain
+			u.Path = scrape.Attr(link, "href")
 
-			Url:  song_url,
-			Name: song_title,
+			wg.Add(1)
+			song := &Song{
+				Album: album,
+
+				Url:  u.String(),
+				Name: link.FirstChild.Data,
+			}
+			go song.Parse(wg)
 		}
-		go song.Parse(wg)
 	}
 
-	// wait for songs
 	wg.Wait()
 	return false
+}
+
+func getSongs(root *html.Node) []*html.Node {
+	return scrape.FindAll(root, func(n *html.Node) bool {
+		if n.Parent != nil {
+			return n.Parent.Data == "strong" && n.Data == "a"
+		}
+		return false
+	})
 }
 
 func (album *Album) put() {
