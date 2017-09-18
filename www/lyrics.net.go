@@ -14,34 +14,29 @@ import (
 	"github.com/de-nova-stella/rest"
 )
 
-var domain *url.URL
+// TODO shared ref
+var (
+	domain *url.URL
+	wg     *sync.WaitGroup
+)
 
-type Investigator struct {
+func Init() {
 
-	// TODO shared ref
-	wg *sync.WaitGroup
-}
-
-func New(start string) *Investigator {
-
-	investigator := new(Investigator)
-	investigator.wg = new(sync.WaitGroup)
 	domain, _ = url.Parse("http://www.lyrics.net")
+	wg = new(sync.WaitGroup)
 	canvas.Init()
-
-	return investigator
 }
 
-func (investigator *Investigator) Run() {
+func Run() {
 
 	for _, c := range "0ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
 		u := *domain
 		u.Path = path.Join("artists", string(c), "99999")
-		investigator.parseArtists(u)
+		parseArtists(u)
 	}
 }
 
-func (investigator *Investigator) parseArtists(u url.URL) {
+func parseArtists(u url.URL) {
 
 	// set body
 	b, ok := rest.Get(u.String())
@@ -65,7 +60,7 @@ func (investigator *Investigator) parseArtists(u url.URL) {
 				Url:  u.String(),
 				Name: link.FirstChild.Data,
 			}
-			artist.Parse(investigator.wg)
+			artist.Parse(wg)
 		}
 	}
 }
