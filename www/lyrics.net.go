@@ -2,9 +2,11 @@ package www
 
 import (
 	"log"
-	"regexp"
+	"net/url"
+	"path"
 	"sync"
 
+	"github.com/kr/pretty"
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
 
@@ -14,82 +16,38 @@ import (
 
 const domain = "http://www.lyrics.net"
 
-// set regular expression for letter suburls
-var artists = regexp.MustCompile("^artist/.*$")
-
 type Investigator struct {
-	expression string
 
 	// TODO shared ref
 	wg *sync.WaitGroup
 }
 
-func inASCIIupper(str string) bool {
-	for _, char := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-		if string(char) == string(str[0]) {
-			return true
-		}
-	}
-	return false
-}
-
 func New(start string) *Investigator {
 
 	investigator := new(Investigator)
-	canvas.Init()
 	investigator.wg = new(sync.WaitGroup)
-
-	if inASCIIupper(start) {
-		investigator.expression = "^/artists/[" + string(start[0]) + "-Z]$"
-	} else {
-		investigator.expression = "^/artists/[0A-Z]$"
-	}
+	canvas.Init()
 
 	return investigator
 }
 
 func (investigator *Investigator) Run() {
 
-	b, ok := rest.Get(domain)
-	if !ok {
-		return
+	u, _ := url.Parse(domain)
+
+	for _, c := range "0ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+		u.Path = path.Join("artists", string(c), "99999")
+		investigator.getArtists(*u)
 	}
-	defer b.Close()
 
-	z := html.NewTokenizer(b)
-	for {
-		switch z.Next() {
-
-		case html.ErrorToken:
-			return
-
-		case html.StartTagToken:
-			if letterLink, ok := investigator.getLetterLink(z.Token()); ok {
-				investigator.getArtists(letterLink)
-			}
-		}
-	}
 }
 
-func (investigator *Investigator) getLetterLink(t html.Token) (string, bool) {
-
-	letters, _ := regexp.Compile(investigator.expression)
-
-	if t.Data == "a" {
-		for _, a := range t.Attr {
-			if a.Key == "href" && letters.MatchString(a.Val) {
-				return domain + a.Val + "/99999", true
-			}
-		}
-	}
-	return "", false
-}
-
-func (investigator *Investigator) getArtists(letter_url string) {
+func (investigator *Investigator) getArtists(u url.URL) {
 
 	// set body
-	b, ok := rest.Get(letter_url)
+	b, ok := rest.Get(u.String())
 	if !ok {
+		pretty.Logln("[DEBUG] failed getting artist url", u)
 		return
 	}
 	defer b.Close()
@@ -102,21 +60,12 @@ func (investigator *Investigator) getArtists(letter_url string) {
 
 	// find artist urls
 	for _, link := range getArtistLinks(root) {
-
-		if artist_suburl := scrape.Attr(link, "href"); artists.MatchString(artist_suburl) {
-
-			// extract artist name
-			var artist_name string
-			if link.FirstChild != nil {
-				artist_name = link.FirstChild.Data
-			}
-
+		if link.FirstChild != nil {
+			u.Path = scrape.Attr(link, "href")
 			artist := &canvas.Artist{
-				Url:  domain + "/" + artist_suburl,
-				Name: artist_name,
+				Url:  u.String(),
+				Name: link.FirstChild.Data,
 			}
-
-			// parse the artist
 			artist.Parse(investigator.wg)
 		}
 	}
