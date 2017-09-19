@@ -12,7 +12,14 @@
 	<string>/keybase/private/atec/investigations.stderr</string>
 	<key>RunAtLoad</key>
 	<true/>
+
 	<key>KeepAlive</key>
-	<true/>
+	<dict>
+		<key>OtherJobEnabled</key>
+		<dict>
+			<key>keybase.kbfs</key>
+			<true/>
+		</dict>
+	</dict>
 </dict>
 </plist>
