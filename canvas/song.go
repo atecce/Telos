@@ -2,12 +2,9 @@ package canvas
 
 import (
 	"log"
-	"net"
 	"sync"
-	"syscall"
 	"time"
 
-	"github.com/de-nova-stella/rest"
 	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
@@ -44,33 +41,21 @@ func (song *Song) Parse(wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
-	// get body
-	b, ok := rest.Get(song.Url)
-	if !ok {
-		return
-	}
+	root, b := parse(song.Url)
 	defer b.Close()
 
-	// parse page
-	root, err := html.Parse(b)
-	if err != nil {
-		if operr, ok := err.(*net.OpError); ok {
-			if operr.Err.Error() == syscall.ECONNRESET.Error() {
-				wg.Add(1)
-				song.Parse(wg)
-				return
-			}
-		}
-		panic(err)
-	}
+	song.Lyrics = scrapeLyrics(root)
+	song.put()
+}
 
-	// extract lyrics
-	if lyrics_root, ok := scrape.Find(root, func(n *html.Node) bool {
+func scrapeLyrics(root *html.Node) string {
+	if n, ok := scrape.Find(root, func(n *html.Node) bool {
 		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
 	}); ok {
-		song.Lyrics = scrape.Text(lyrics_root)
-		song.put()
+		return scrape.Text(n)
 	}
+	log.Println("[ERROR] failed to scrape lyrics")
+	return ""
 }
 
 func (song *Song) put() {

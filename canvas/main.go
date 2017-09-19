@@ -2,11 +2,14 @@ package canvas
 
 import (
 	"database/sql"
+	"io"
 	"log"
 	"net/url"
 
+	"github.com/de-nova-stella/rest"
 	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/net/html"
 )
 
 var (
@@ -43,4 +46,12 @@ func begin() *sql.Tx {
 		return nil
 	}
 	return tx
+}
+
+func parse(url string) (*html.Node, io.ReadCloser) {
+
+	b, _ := rest.Get(url)
+	root, _ := html.Parse(b)
+
+	return root, b
 }

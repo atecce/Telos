@@ -52,7 +52,7 @@ func parseArtists(u url.URL) {
 	}
 
 	// find artist urls
-	for _, link := range getArtists(root) {
+	for _, link := range scrapeArtists(root) {
 		if link.FirstChild != nil {
 			u.Path = scrape.Attr(link, "href")
 			artist := &canvas.Artist{
@@ -64,7 +64,7 @@ func parseArtists(u url.URL) {
 	}
 }
 
-func getArtists(root *html.Node) []*html.Node {
+func scrapeArtists(root *html.Node) []*html.Node {
 	return scrape.FindAll(root, func(n *html.Node) bool {
 		if n.Parent != nil {
 			return n.Parent.Data == "strong" && n.Data == "a"

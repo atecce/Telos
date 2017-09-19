@@ -4,7 +4,6 @@ import (
 	"log"
 	"sync"
 
-	"github.com/de-nova-stella/rest"
 	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
@@ -35,18 +34,8 @@ func initAlbums() {
 
 func (album *Album) Parse(wg *sync.WaitGroup) bool {
 
-	// get body
-	b, ok := rest.Get(album.Url)
-	if !ok {
-		return false
-	}
+	root, b := parse(album.Url)
 	defer b.Close()
-
-	// parse page
-	root, err := html.Parse(b)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	// check for home page
 	if _, dorothy := scrape.Find(root, func(n *html.Node) bool {
@@ -56,7 +45,7 @@ func (album *Album) Parse(wg *sync.WaitGroup) bool {
 	}
 
 	// find song links
-	songs := getSongs(root)
+	songs := scrapeSongs(root)
 	if len(songs) == 0 {
 		return true
 	}
@@ -85,7 +74,7 @@ func (album *Album) Parse(wg *sync.WaitGroup) bool {
 	return false
 }
 
-func getSongs(root *html.Node) []*html.Node {
+func scrapeSongs(root *html.Node) []*html.Node {
 	return scrape.FindAll(root, func(n *html.Node) bool {
 		if n.Parent != nil {
 			return n.Parent.Data == "strong" && n.Data == "a"
