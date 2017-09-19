@@ -14,7 +14,7 @@ var (
 	domain *url.URL
 )
 
-func Init() {
+func initDb() {
 
 	domain, _ = url.Parse("http://www.lyrics.net")
 
@@ -31,6 +31,11 @@ func Init() {
 }
 
 func begin() *sql.Tx {
+
+	if db == nil {
+		initDb()
+	}
+
 	tx, err := db.Begin()
 	if err != nil {
 		log.Println("[ERROR] beginning tx")

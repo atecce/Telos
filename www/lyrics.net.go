@@ -24,7 +24,6 @@ func Init() {
 
 	domain, _ = url.Parse("http://www.lyrics.net")
 	wg = new(sync.WaitGroup)
-	canvas.Init()
 }
 
 func Run() {
