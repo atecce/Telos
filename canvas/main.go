@@ -2,6 +2,8 @@ package canvas
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/url"
@@ -48,10 +50,18 @@ func begin() *sql.Tx {
 	return tx
 }
 
-func parse(url string) (*html.Node, io.ReadCloser) {
+func parse(url string) (*html.Node, io.ReadCloser, error) {
 
-	b, _ := rest.Get(url)
-	root, _ := html.Parse(b)
+	b, ok := rest.Get(url)
+	if !ok {
+		return nil, nil, errors.New(fmt.Sprintf("failed to get url: %s", url))
+	}
 
-	return root, b
+	root, err := html.Parse(b)
+	if err != nil {
+		b.Close()
+		return nil, nil, err
+	}
+
+	return root, b, nil
 }

@@ -34,7 +34,11 @@ func initAlbums() {
 
 func (album *Album) Parse(wg *sync.WaitGroup) bool {
 
-	root, b := parse(album.Url)
+	root, b, err := parse(album.Url)
+	if err != nil {
+		log.Println("[ERROR] failed to parse album url", album.Url)
+		return false
+	}
 	defer b.Close()
 
 	// check for home page

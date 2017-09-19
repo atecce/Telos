@@ -41,7 +41,11 @@ func (song *Song) Parse(wg *sync.WaitGroup) {
 
 	defer wg.Done()
 
-	root, b := parse(song.Url)
+	root, b, err := parse(song.Url)
+	if err != nil {
+		log.Println("[ERROR] failed to parse song url", song.Url)
+		return
+	}
 	defer b.Close()
 
 	song.Lyrics = scrapeLyrics(root)
