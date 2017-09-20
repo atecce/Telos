@@ -26,6 +26,29 @@ func initArtists() {
 	}
 }
 
+func FetchLatestArtist() (*Artist, error) {
+
+	rows, err := db.Query("select name from artists order by name desc")
+	if err != nil {
+		pretty.Logln("[DEBUG] failed to get latest artist name", rows, err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var name string
+	rows.Next()
+	err = rows.Scan(&name)
+	if err != nil {
+		pretty.Logln("[DEBUG] failed to get scan rows", rows, err)
+		return nil, err
+	}
+	log.Println("[INFO] got latest", name)
+
+	return &Artist{
+		Name: name,
+	}, nil
+}
+
 func (artist *Artist) Parse(wg *sync.WaitGroup) {
 
 	// initialize artist flag

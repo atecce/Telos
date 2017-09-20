@@ -4,7 +4,9 @@ import (
 	"log"
 	"regexp"
 	"sync"
+	"unicode"
 
+	"github.com/kr/pretty"
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
 
@@ -24,9 +26,9 @@ type Investigator struct {
 	wg *sync.WaitGroup
 }
 
-func inASCIIupper(str string) bool {
-	for _, char := range "ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-		if string(char) == string(str[0]) {
+func inAlphabet(char rune) bool {
+	for _, c := range "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+		if c == char {
 			return true
 		}
 	}
@@ -39,11 +41,21 @@ func New(start string) *Investigator {
 	canvas.Init()
 	investigator.wg = new(sync.WaitGroup)
 
-	if inASCIIupper(start) {
-		investigator.expression = "^/artists/[" + string(start[0]) + "-Z]$"
+	latest, err := canvas.FetchLatestArtist()
+	if err != nil {
+		log.Fatal("failed to fetch latest artist")
+	}
+	pretty.Logln("got latest artist", latest)
+
+	first := rune(latest.Name[0])
+	pretty.Logln("got first letter", first)
+
+	if inAlphabet(first) {
+		investigator.expression = "^/artists/[" + string(unicode.ToUpper(first)) + "-Z]$"
 	} else {
 		investigator.expression = "^/artists/[0A-Z]$"
 	}
+	pretty.Logln("set regex", investigator.expression)
 
 	return investigator
 }
