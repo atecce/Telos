@@ -1,26 +1,26 @@
 package www
 
 import (
+	"fmt"
 	"log"
+	"log/syslog"
 	"net/url"
 	"path"
 	"regexp"
 	"sync"
 	"unicode"
 
-	"github.com/kr/pretty"
-	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
 
 	"github.com/de-nova-stella/investigations/canvas"
 	"github.com/de-nova-stella/rest"
+	"github.com/yhat/scrape"
 )
 
 type Investigator struct {
 	domain *url.URL
-
-	// TODO shared ref
-	wg *sync.WaitGroup
+	wg     *sync.WaitGroup
+	logger *syslog.Writer
 }
 
 func inAlphabet(char rune) bool {
@@ -37,6 +37,12 @@ func New() *Investigator {
 	investigator := new(Investigator)
 	investigator.wg = new(sync.WaitGroup)
 	investigator.domain, _ = url.Parse("http://www.lyrics.net")
+
+	syslogger, err := syslog.Dial("", "", syslog.LOG_USER, "investigations")
+	if err != nil {
+		log.Fatal("syslog:", err)
+	}
+	investigator.logger = syslogger
 
 	return investigator
 }
@@ -76,7 +82,7 @@ func (investigator *Investigator) parseArtists(u url.URL) {
 	// set body
 	b, ok := rest.Get(u.String())
 	if !ok {
-		pretty.Logln("[DEBUG] failed getting artist url", u)
+		investigator.logger.Debug(fmt.Sprintf("failed getting artist url %v", u))
 		return
 	}
 	defer b.Close()
@@ -84,7 +90,7 @@ func (investigator *Investigator) parseArtists(u url.URL) {
 	// parse page
 	root, err := html.Parse(b)
 	if err != nil {
-		log.Fatal(err)
+		investigator.logger.Emerg(err.Error())
 	}
 
 	// find artist urls

@@ -1,11 +1,11 @@
 package canvas
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
 
-	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
@@ -75,26 +75,23 @@ func (song *Song) put() {
 		stmt, err := tx.Prepare("insert or replace into songs (album, name, lyrics) values (?, ?, ?)")
 		if err != nil {
 			failed = true
-			log.Println("[ERROR] preparing", song.Name, "for album", song.Album.Name+":", err)
+			logger.Err(fmt.Sprintf("preparing stmt %v for song %v with err %v", stmt, song, err))
 			time.Sleep(time.Second)
 			continue
 		}
 		defer stmt.Close()
 
-		if debug {
-			pretty.Logln("[DEBUG] execing stmt", stmt, "for song", song)
-		}
 		_, err = stmt.Exec(song.Album.Name, song.Name, song.Lyrics)
 		if err != nil {
 			failed = true
-			log.Println("[ERROR] execing", song.Name, "for album", song.Album.Name+":", err)
+			logger.Err(fmt.Sprintf("execing stmt %v for song %v with err %v", stmt, song, err))
 			time.Sleep(time.Second)
 			continue
 		}
 		tx.Commit()
 
 		if failed {
-			log.Println("[INFO] successfully added", song.Name, "to album", song.Album.Name)
+			logger.Info(fmt.Sprintf("execing stmt %v for song %v with err %v", stmt, song, err))
 		}
 		return
 	}
