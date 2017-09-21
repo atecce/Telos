@@ -16,17 +16,22 @@ type Artist struct {
 }
 
 func initArtists() {
-	if res, err := db.Exec(`create table if not exists artists (
+
+	if _, err := db.Exec(`create table if not exists artists (
 
 				      name text not null,
 
 				      primary key (name))`); err != nil {
 		pretty.Logln("[FATAL] initializing artists")
-		log.Fatal(res, err)
+		log.Fatal("sqlite: ", err)
 	}
 }
 
 func FetchLatestArtist() (*Artist, error) {
+
+	if db == nil {
+		initDb()
+	}
 
 	rows, err := db.Query("select name from artists order by name desc")
 	if err != nil {

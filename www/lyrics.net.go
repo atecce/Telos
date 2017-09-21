@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/url"
 	"path"
+	"regexp"
 	"sync"
 	"unicode"
 
@@ -15,12 +16,11 @@ import (
 	"github.com/de-nova-stella/rest"
 )
 
-const domain = "http://www.lyrics.net"
-
 // set regular expression for letter suburls
 var artists = regexp.MustCompile("^artist/.*$")
 
 type Investigator struct {
+	domain     *url.URL
 	expression string
 
 	// TODO shared ref
@@ -36,11 +36,11 @@ func inAlphabet(char rune) bool {
 	return false
 }
 
-func New(start string) *Investigator {
+func New() *Investigator {
 
 	investigator := new(Investigator)
-	canvas.Init()
 	investigator.wg = new(sync.WaitGroup)
+	investigator.domain, _ = url.Parse("http://www.lyrics.net")
 
 	latest, err := canvas.FetchLatestArtist()
 	if err != nil {
@@ -61,22 +61,16 @@ func New(start string) *Investigator {
 	return investigator
 }
 
-func Init() {
-
-	domain, _ = url.Parse("http://www.lyrics.net")
-	wg = new(sync.WaitGroup)
-}
-
-func Run() {
+func (investigator *Investigator) Run() {
 
 	for _, c := range "0ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-		u := *domain
+		u := investigator.domain
 		u.Path = path.Join("artists", string(c), "99999")
-		parseArtists(u)
+		investigator.parseArtists(*u)
 	}
 }
 
-func parseArtists(u url.URL) {
+func (investigator *Investigator) parseArtists(u url.URL) {
 
 	// set body
 	b, ok := rest.Get(u.String())
@@ -100,7 +94,7 @@ func parseArtists(u url.URL) {
 				Url:  u.String(),
 				Name: link.FirstChild.Data,
 			}
-			artist.Parse(wg)
+			artist.Parse(investigator.wg)
 		}
 	}
 }

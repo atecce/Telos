@@ -5,6 +5,7 @@ import (
 )
 
 func main() {
-	www.Init()
-	www.Run()
+
+	wittgenstein := www.New()
+	wittgenstein.Run()
 }

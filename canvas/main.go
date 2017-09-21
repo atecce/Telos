@@ -37,6 +37,7 @@ func initDb() {
 
 func begin() *sql.Tx {
 
+	// lazy initiation on first tx
 	if db == nil {
 		initDb()
 	}
