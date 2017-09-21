@@ -2,7 +2,8 @@ package www
 
 import (
 	"log"
-	"regexp"
+	"net/url"
+	"path"
 	"sync"
 	"unicode"
 
@@ -60,48 +61,27 @@ func New(start string) *Investigator {
 	return investigator
 }
 
-func (investigator *Investigator) Run() {
+func Init() {
 
-	b, ok := rest.Get(domain)
-	if !ok {
-		return
-	}
-	defer b.Close()
+	domain, _ = url.Parse("http://www.lyrics.net")
+	wg = new(sync.WaitGroup)
+}
 
-	z := html.NewTokenizer(b)
-	for {
-		switch z.Next() {
+func Run() {
 
-		case html.ErrorToken:
-			return
-
-		case html.StartTagToken:
-			if letterLink, ok := investigator.getLetterLink(z.Token()); ok {
-				investigator.getArtists(letterLink)
-			}
-		}
+	for _, c := range "0ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+		u := *domain
+		u.Path = path.Join("artists", string(c), "99999")
+		parseArtists(u)
 	}
 }
 
-func (investigator *Investigator) getLetterLink(t html.Token) (string, bool) {
-
-	letters, _ := regexp.Compile(investigator.expression)
-
-	if t.Data == "a" {
-		for _, a := range t.Attr {
-			if a.Key == "href" && letters.MatchString(a.Val) {
-				return domain + a.Val + "/99999", true
-			}
-		}
-	}
-	return "", false
-}
-
-func (investigator *Investigator) getArtists(letter_url string) {
+func parseArtists(u url.URL) {
 
 	// set body
-	b, ok := rest.Get(letter_url)
+	b, ok := rest.Get(u.String())
 	if !ok {
+		pretty.Logln("[DEBUG] failed getting artist url", u)
 		return
 	}
 	defer b.Close()
@@ -113,28 +93,19 @@ func (investigator *Investigator) getArtists(letter_url string) {
 	}
 
 	// find artist urls
-	for _, link := range getArtistLinks(root) {
-
-		if artist_suburl := scrape.Attr(link, "href"); artists.MatchString(artist_suburl) {
-
-			// extract artist name
-			var artist_name string
-			if link.FirstChild != nil {
-				artist_name = link.FirstChild.Data
-			}
-
+	for _, link := range scrapeArtists(root) {
+		if link.FirstChild != nil {
+			u.Path = scrape.Attr(link, "href")
 			artist := &canvas.Artist{
-				Url:  domain + "/" + artist_suburl,
-				Name: artist_name,
+				Url:  u.String(),
+				Name: link.FirstChild.Data,
 			}
-
-			// parse the artist
-			artist.Parse(investigator.wg)
+			artist.Parse(wg)
 		}
 	}
 }
 
-func getArtistLinks(root *html.Node) []*html.Node {
+func scrapeArtists(root *html.Node) []*html.Node {
 	return scrape.FindAll(root, func(n *html.Node) bool {
 		if n.Parent != nil {
 			return n.Parent.Data == "strong" && n.Data == "a"

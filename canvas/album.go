@@ -4,7 +4,6 @@ import (
 	"log"
 	"sync"
 
-	"github.com/de-nova-stella/rest"
 	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
@@ -35,18 +34,12 @@ func initAlbums() {
 
 func (album *Album) Parse(wg *sync.WaitGroup) bool {
 
-	// get body
-	b, ok := rest.Get(album.Url)
-	if !ok {
+	root, b, err := parse(album.Url)
+	if err != nil {
+		log.Println("[ERROR] failed to parse album url", album.Url)
 		return false
 	}
 	defer b.Close()
-
-	// parse page
-	root, err := html.Parse(b)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	// check for home page
 	if _, dorothy := scrape.Find(root, func(n *html.Node) bool {
@@ -55,38 +48,42 @@ func (album *Album) Parse(wg *sync.WaitGroup) bool {
 		return true
 	}
 
-	// find song links
-	song_links := getSongLinks(root)
-	if len(song_links) == 0 {
+	songs := scrapeSongs(root)
+	if len(songs) == 0 {
 		return true
 	}
 
 	// scrape links
-	for _, link := range song_links {
-		song_url := domain + scrape.Attr(link, "href")
+	for _, link := range songs {
 
 		// title is first child
-		var song_title string
 		if link.FirstChild != nil {
-			song_title = link.FirstChild.Data
-		} else {
-			panic(err)
-		}
 
-		// parse songs
-		wg.Add(1)
-		song := &Song{
-			Album: album,
+			u := *domain
+			u.Path = scrape.Attr(link, "href")
 
-			Url:  song_url,
-			Name: song_title,
+			wg.Add(1)
+			song := &Song{
+				Album: album,
+
+				Url:  u.String(),
+				Name: link.FirstChild.Data,
+			}
+			go song.Parse(wg)
 		}
-		go song.Parse(wg)
 	}
 
-	// wait for songs
 	wg.Wait()
 	return false
+}
+
+func scrapeSongs(root *html.Node) []*html.Node {
+	return scrape.FindAll(root, func(n *html.Node) bool {
+		if n.Parent != nil {
+			return n.Parent.Data == "strong" && n.Data == "a"
+		}
+		return false
+	})
 }
 
 func (album *Album) put() {
