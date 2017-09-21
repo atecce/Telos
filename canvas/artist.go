@@ -1,11 +1,11 @@
 package canvas
 
 import (
+	"fmt"
 	"log"
 	"sync"
 
 	"github.com/de-nova-stella/rest"
-	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/net/html"
 )
@@ -21,7 +21,7 @@ func initArtists() {
 				      name text not null,
 
 				      primary key (name))`); err != nil {
-		pretty.Logln("[FATAL] initializing artists")
+		logger.Emerg("initializing artists")
 		log.Fatal(res, err)
 	}
 }
@@ -150,21 +150,18 @@ func (artist *Artist) put() {
 
 	stmt, err := tx.Prepare("insert or replace into artists (name) values (?)")
 	if err != nil {
-		pretty.Logln("[ERROR] preparing stmt for artist", artist)
-		pretty.Logln("[INFO]", stmt, err)
+		logger.Err(fmt.Sprintf("preparing stmt %v for artist %v with err %v", stmt, artist, err))
 		return
 	}
 	defer stmt.Close()
 
 	if res, err := stmt.Exec(artist.Name); err != nil {
-		pretty.Logln("[ERROR] execing stmt for artist", artist)
-		pretty.Logln("[INFO]", res, err)
+		logger.Err(fmt.Sprintf("execing stmt %v for artist %v with res %v and err %v", stmt, artist, res, err))
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		pretty.Logln("[ERROR] committing tx for artist", artist)
-		pretty.Logln("[INFO]", err)
+		logger.Err(fmt.Sprintf("committing tx %v for artist %v with err %v", tx, artist, err))
 		return
 	}
 }

@@ -1,29 +1,36 @@
 package www
 
 import (
+	"fmt"
 	"log"
+	"log/syslog"
 	"net/url"
 	"path"
 	"sync"
 
-	"github.com/kr/pretty"
-	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
 
 	"github.com/de-nova-stella/investigations/canvas"
 	"github.com/de-nova-stella/rest"
+	"github.com/yhat/scrape"
 )
 
 // TODO shared ref
 var (
 	domain *url.URL
 	wg     *sync.WaitGroup
+	logger *syslog.Writer
 )
 
 func Init() {
 
 	domain, _ = url.Parse("http://www.lyrics.net")
 	wg = new(sync.WaitGroup)
+	syslogger, err := syslog.Dial("", "", syslog.LOG_USER, "investigations")
+	if err != nil {
+		log.Fatal("syslog:", err)
+	}
+	logger = syslogger
 }
 
 func Run() {
@@ -40,7 +47,7 @@ func parseArtists(u url.URL) {
 	// set body
 	b, ok := rest.Get(u.String())
 	if !ok {
-		pretty.Logln("[DEBUG] failed getting artist url", u)
+		logger.Debug(fmt.Sprintf("failed getting artist url %v", u))
 		return
 	}
 	defer b.Close()
@@ -48,7 +55,7 @@ func parseArtists(u url.URL) {
 	// parse page
 	root, err := html.Parse(b)
 	if err != nil {
-		log.Fatal(err)
+		logger.Emerg(err.Error())
 	}
 
 	// find artist urls

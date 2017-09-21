@@ -1,10 +1,9 @@
 package canvas
 
 import (
-	"log"
+	"fmt"
 	"sync"
 
-	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
@@ -36,7 +35,7 @@ func (album *Album) Parse(wg *sync.WaitGroup) bool {
 
 	root, b, err := parse(album.Url)
 	if err != nil {
-		log.Println("[ERROR] failed to parse album url", album.Url)
+		logger.Err(fmt.Sprintf("parsing album url %s", album.Url))
 		return false
 	}
 	defer b.Close()
@@ -96,23 +95,19 @@ func (album *Album) put() {
 
 	stmt, err := tx.Prepare("insert or replace into albums (artist, name) values (?, ?)")
 	if err != nil {
-		log.Println("[ERROR] preparing stmt for album", album)
-		pretty.Logln("[DEBUG] on tx", tx, "with err", err)
+		logger.Err(fmt.Sprintf("preparing stmt %v for album %v with err %v", stmt, album, err))
 	}
 
 	_, err = stmt.Exec(album.Artist.Name, album.Name)
 	if err != nil {
-		log.Println("[ERROR] execing stmt for album", album)
-		pretty.Logln("[DEBUG] on stmt", stmt, "with err", err)
+		logger.Err(fmt.Sprintf("execing stmt %v for album %v with err %v", stmt, album, err))
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Println("[ERROR] committing tx for album", album)
-		pretty.Logln("[DEBUG] on tx", tx, "with err", err)
+		logger.Err(fmt.Sprintf("committing tx %v for artist %v with err %v", tx, album, err))
 	}
 
 	if err := stmt.Close(); err != nil {
-		log.Println("[ERROR] closing stmt for album", album)
-		pretty.Logln("[DEBUG] on stmt", stmt, "with err", err)
+		logger.Err(fmt.Sprintf("closing stmt %v for album %v with err %v", stmt, album, err))
 	}
 }

@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/syslog"
 	"net/url"
 
 	"github.com/de-nova-stella/rest"
-	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/net/html"
 )
@@ -17,15 +17,23 @@ import (
 var (
 	db     *sql.DB
 	domain *url.URL
+	logger *syslog.Writer
 )
 
 func initDb() {
+
+	syslogger, err := syslog.Dial("", "", syslog.LOG_USER, "")
+	if err != nil {
+		log.Fatal("syslog:", err)
+
+	}
+	logger = syslogger
 
 	domain, _ = url.Parse("http://www.lyrics.net")
 
 	database, err := sql.Open("sqlite3", "/keybase/private/atec/lyrics.net.db")
 	if err != nil {
-		pretty.Logln("[FATAL] failed to initialize db")
+		logger.Emerg(fmt.Sprintf("failed to initialize db %v", err))
 		log.Fatal(err)
 	}
 	db = database
@@ -43,8 +51,7 @@ func begin() *sql.Tx {
 
 	tx, err := db.Begin()
 	if err != nil {
-		log.Println("[ERROR] beginning tx")
-		pretty.Logln("[DEBUG] on db", db, "with err", err)
+		logger.Err("beginning tx")
 		return nil
 	}
 	return tx
