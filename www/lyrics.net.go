@@ -16,12 +16,8 @@ import (
 	"github.com/de-nova-stella/rest"
 )
 
-// set regular expression for letter suburls
-var artists = regexp.MustCompile("^artist/.*$")
-
 type Investigator struct {
-	domain     *url.URL
-	expression string
+	domain *url.URL
 
 	// TODO shared ref
 	wg *sync.WaitGroup
@@ -42,6 +38,11 @@ func New() *Investigator {
 	investigator.wg = new(sync.WaitGroup)
 	investigator.domain, _ = url.Parse("http://www.lyrics.net")
 
+	return investigator
+}
+
+func (investigator *Investigator) Run() {
+
 	latest, err := canvas.FetchLatestArtist()
 	if err != nil {
 		log.Fatal("failed to fetch latest artist")
@@ -51,22 +52,22 @@ func New() *Investigator {
 	first := rune(latest.Name[0])
 	pretty.Logln("got first letter", first)
 
+	var pattern string
 	if inAlphabet(first) {
-		investigator.expression = "^/artists/[" + string(unicode.ToUpper(first)) + "-Z]$"
+		pattern = "^[" + string(unicode.ToUpper(first)) + "-Z]$"
 	} else {
-		investigator.expression = "^/artists/[0A-Z]$"
+		pattern = "^[0A-Z]$"
 	}
-	pretty.Logln("set regex", investigator.expression)
-
-	return investigator
-}
-
-func (investigator *Investigator) Run() {
+	pretty.Logln("set pattern", pattern)
 
 	for _, c := range "0ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
-		u := investigator.domain
-		u.Path = path.Join("artists", string(c), "99999")
-		investigator.parseArtists(*u)
+		if ok, err := regexp.MatchString(pattern, string(c)); ok {
+			u := investigator.domain
+			u.Path = path.Join("artists", string(c), "99999")
+			investigator.parseArtists(*u)
+		} else if err != nil {
+			log.Println("error matching alphabet pattern")
+		}
 	}
 }
 
