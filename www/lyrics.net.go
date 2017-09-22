@@ -49,20 +49,19 @@ func New() *Investigator {
 
 func (investigator *Investigator) Run() {
 
+	pattern := "^[0A-Z]$"
+
 	latest, err := canvas.FetchLatestArtist()
-	if err != nil {
-		log.Fatal("failed to fetch latest artist")
-	}
-	investigator.logger.Info(fmt.Sprintf("got latest artist %s", latest))
+	if err == nil {
 
-	first := rune(latest.Name[0])
-	investigator.logger.Info(fmt.Sprintf("got first letter %s", first))
+		investigator.logger.Info(fmt.Sprintf("got latest artist %s", latest))
 
-	var pattern string
-	if inAlphabet(first) {
-		pattern = "^[" + string(unicode.ToUpper(first)) + "-Z]$"
-	} else {
-		pattern = "^[0A-Z]$"
+		first := rune(latest.Name[0])
+		investigator.logger.Info(fmt.Sprintf("got first letter %s", first))
+
+		if inAlphabet(first) {
+			pattern = "^[" + string(unicode.ToUpper(first)) + "-Z]$"
+		}
 	}
 	investigator.logger.Info(fmt.Sprintf("set pattern %s", pattern))
 
