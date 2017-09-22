@@ -53,10 +53,10 @@ func (investigator *Investigator) Run() {
 	if err != nil {
 		log.Fatal("failed to fetch latest artist")
 	}
-	pretty.Logln("got latest artist", latest)
+	investigator.logger.Info(fmt.Sprintf("got latest artist %s", latest))
 
 	first := rune(latest.Name[0])
-	pretty.Logln("got first letter", first)
+	investigator.logger.Info(fmt.Sprintf("got first letter %s", first))
 
 	var pattern string
 	if inAlphabet(first) {
@@ -64,7 +64,7 @@ func (investigator *Investigator) Run() {
 	} else {
 		pattern = "^[0A-Z]$"
 	}
-	pretty.Logln("set pattern", pattern)
+	investigator.logger.Info(fmt.Sprintf("set pattern %s", pattern))
 
 	for _, c := range "0ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
 		if ok, err := regexp.MatchString(pattern, string(c)); ok {
@@ -72,7 +72,7 @@ func (investigator *Investigator) Run() {
 			u.Path = path.Join("artists", string(c), "99999")
 			investigator.parseArtists(*u)
 		} else if err != nil {
-			log.Println("error matching alphabet pattern")
+			investigator.logger.Err("error matching alphabet pattern")
 		}
 	}
 }

@@ -33,7 +33,7 @@ func initSongs() {
 				     foreign key (album) references albums (name))`)
 
 	if err != nil {
-		log.Println("Failed to create tables:", err)
+		log.Fatal("failed to create tables:", err)
 	}
 }
 
@@ -43,7 +43,7 @@ func (song *Song) Parse(wg *sync.WaitGroup) {
 
 	root, b, err := parse(song.Url)
 	if err != nil {
-		log.Println("[ERROR] failed to parse song url", song.Url)
+		logger.Err(fmt.Sprintf("failed to parse song url %s", song.Url))
 		return
 	}
 	defer b.Close()
@@ -58,7 +58,8 @@ func scrapeLyrics(root *html.Node) string {
 	}); ok {
 		return scrape.Text(n)
 	}
-	log.Println("[ERROR] failed to scrape lyrics")
+	logger.Err("failed to scrape lyrics")
+
 	return ""
 }
 

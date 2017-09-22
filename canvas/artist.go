@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/de-nova-stella/rest"
-	"github.com/kr/pretty"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/net/html"
 )
@@ -36,7 +35,7 @@ func FetchLatestArtist() (*Artist, error) {
 
 	rows, err := db.Query("select name from artists order by name desc")
 	if err != nil {
-		pretty.Logln("[DEBUG] failed to get latest artist name", rows, err)
+		logger.Debug(fmt.Sprintf("failed to get latest artist name %v", err))
 		return nil, err
 	}
 	defer rows.Close()
@@ -45,10 +44,10 @@ func FetchLatestArtist() (*Artist, error) {
 	rows.Next()
 	err = rows.Scan(&name)
 	if err != nil {
-		pretty.Logln("[DEBUG] failed to get scan rows", rows, err)
+		logger.Err(fmt.Sprintf("failed to scan rows %v", err))
 		return nil, err
 	}
-	log.Println("[INFO] got latest", name)
+	logger.Info(fmt.Sprintf("got latest %s", name))
 
 	return &Artist{
 		Name: name,
