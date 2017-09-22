@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/yhat/scrape"
@@ -70,30 +69,20 @@ func (song *Song) put() {
 		return
 	}
 
-	var failed bool
-	for {
-
-		stmt, err := tx.Prepare("insert or replace into songs (album, name, lyrics) values (?, ?, ?)")
-		if err != nil {
-			failed = true
-			logger.Err(fmt.Sprintf("preparing stmt %v for song %v with err %v", stmt, song, err))
-			time.Sleep(time.Second)
-			continue
-		}
-		defer stmt.Close()
-
-		_, err = stmt.Exec(song.Album.Name, song.Name, song.Lyrics)
-		if err != nil {
-			failed = true
-			logger.Err(fmt.Sprintf("execing stmt %v for song %v with err %v", stmt, song, err))
-			time.Sleep(time.Second)
-			continue
-		}
-		tx.Commit()
-
-		if failed {
-			logger.Info(fmt.Sprintf("execing stmt %v for song %v with err %v", stmt, song, err))
-		}
+	stmt, err := tx.Prepare("insert or replace into songs (album, name, lyrics) values (?, ?, ?)")
+	if err != nil {
+		logger.Err(fmt.Sprintf("failed inserting song at %s", song.Url))
 		return
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(song.Album.Name, song.Name, song.Lyrics)
+	if err != nil {
+		logger.Err(fmt.Sprintf("failed inserting song at %s", song.Url))
+		return
+	}
+
+	if err := tx.Commit(); err != nil {
+		logger.Err(fmt.Sprintf("failed inserting song at %s", song.Url))
 	}
 }
