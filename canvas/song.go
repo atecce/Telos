@@ -24,6 +24,7 @@ func initSongs() {
 	_, err := db.Exec(`create table if not exists songs (
 
 				     album 	 text not null,
+				     url 	 text not null,
 
 				     name        text not null,
 				     lyrics      text,
@@ -69,14 +70,14 @@ func (song *Song) put() {
 		return
 	}
 
-	stmt, err := tx.Prepare("insert or replace into songs (album, name, lyrics) values (?, ?, ?)")
+	stmt, err := tx.Prepare("insert or replace into songs (album, url, name, lyrics) values (?, ?, ?, ?)")
 	if err != nil {
 		logger.Err(fmt.Sprintf("failed inserting song at %s", song.Url))
 		return
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(song.Album.Name, song.Name, song.Lyrics)
+	_, err = stmt.Exec(song.Album.Name, song.Url, song.Name, song.Lyrics)
 	if err != nil {
 		logger.Err(fmt.Sprintf("failed inserting song at %s", song.Url))
 		return
