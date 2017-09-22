@@ -1,6 +1,7 @@
 package canvas
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sync"
@@ -48,19 +49,22 @@ func (song *Song) Parse(wg *sync.WaitGroup) {
 	}
 	defer b.Close()
 
-	song.Lyrics = scrapeLyrics(root)
+	song.Lyrics, err = scrapeLyrics(root)
+	if err != nil {
+		logger.Err(fmt.Sprintf("%s at %s", err.Error(), song.Url))
+		return
+	}
 	song.put()
 }
 
-func scrapeLyrics(root *html.Node) string {
+func scrapeLyrics(root *html.Node) (string, error) {
 	if n, ok := scrape.Find(root, func(n *html.Node) bool {
 		return n.Data == "pre" && scrape.Attr(n, "id") == "lyric-body-text"
 	}); ok {
-		return scrape.Text(n)
+		return scrape.Text(n), nil
 	}
-	logger.Err("failed to scrape lyrics")
 
-	return ""
+	return "", errors.New("failed to scrape lyrics")
 }
 
 func (song *Song) put() {
@@ -72,18 +76,18 @@ func (song *Song) put() {
 
 	stmt, err := tx.Prepare("insert or replace into songs (album, url, name, lyrics) values (?, ?, ?, ?)")
 	if err != nil {
-		logger.Err(fmt.Sprintf("failed inserting song at %s", song.Url))
+		logger.Err(fmt.Sprintf("failed preparing song at %s", song.Url))
 		return
 	}
 	defer stmt.Close()
 
 	_, err = stmt.Exec(song.Album.Name, song.Url, song.Name, song.Lyrics)
 	if err != nil {
-		logger.Err(fmt.Sprintf("failed inserting song at %s", song.Url))
+		logger.Err(fmt.Sprintf("failed execing song at %s", song.Url))
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		logger.Err(fmt.Sprintf("failed inserting song at %s", song.Url))
+		logger.Err(fmt.Sprintf("failed comitting song at %s", song.Url))
 	}
 }
