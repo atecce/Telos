@@ -31,7 +31,7 @@ func initAlbums() {
 
 }
 
-func (album *Album) Parse(wg *sync.WaitGroup) bool {
+func (album *Album) Parse() bool {
 
 	root, b, err := parse(album.Url)
 	if err != nil {
@@ -61,18 +61,16 @@ func (album *Album) Parse(wg *sync.WaitGroup) bool {
 			u := *domain
 			u.Path = scrape.Attr(link, "href")
 
-			wg.Add(1)
 			song := &Song{
 				Album: album,
 
 				Url:  u.String(),
 				Name: link.FirstChild.Data,
 			}
-			go song.Parse(wg)
+			go song.Parse()
 		}
 	}
 
-	wg.Wait()
 	return false
 }
 

@@ -38,9 +38,7 @@ func initSongs() {
 	}
 }
 
-func (song *Song) Parse(wg *sync.WaitGroup) {
-
-	defer wg.Done()
+func (song *Song) Parse() {
 
 	root, b, err := parse(song.Url)
 	if err != nil {

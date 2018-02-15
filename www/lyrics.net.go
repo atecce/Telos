@@ -19,7 +19,6 @@ import (
 
 type Investigator struct {
 	domain *url.URL
-	wg     *sync.WaitGroup
 	logger *syslog.Writer
 }
 
@@ -35,7 +34,6 @@ func inAlphabet(char rune) bool {
 func New() *Investigator {
 
 	investigator := new(Investigator)
-	investigator.wg = new(sync.WaitGroup)
 	investigator.domain, _ = url.Parse("http://www.lyrics.net")
 
 	syslogger, err := syslog.Dial("", "", syslog.LOG_USER, "investigations")
@@ -100,7 +98,7 @@ func (investigator *Investigator) parseArtists(u url.URL) {
 				Url:  u.String(),
 				Name: link.FirstChild.Data,
 			}
-			artist.Parse(investigator.wg)
+			artist.Parse()
 		}
 	}
 }

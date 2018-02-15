@@ -54,7 +54,7 @@ func FetchLatestArtist() (*Artist, error) {
 	}, nil
 }
 
-func (artist *Artist) Parse(wg *sync.WaitGroup) {
+func (artist *Artist) Parse() {
 
 	// initialize artist flag
 	var artistAdded bool
@@ -111,8 +111,8 @@ func (artist *Artist) Parse(wg *sync.WaitGroup) {
 								album.put()
 
 								// parse album
-								if dorothy := album.Parse(wg); dorothy {
-									no_place(album, z, wg)
+								if dorothy := album.Parse(); dorothy {
+									no_place(album, z)
 								}
 							}
 						}
@@ -123,7 +123,7 @@ func (artist *Artist) Parse(wg *sync.WaitGroup) {
 	}
 }
 
-func no_place(album *Album, z *html.Tokenizer, wg *sync.WaitGroup) {
+func no_place(album *Album, z *html.Tokenizer) {
 
 	// parse album from artist page
 	for {
@@ -136,7 +136,6 @@ func no_place(album *Album, z *html.Tokenizer, wg *sync.WaitGroup) {
 
 			for _, a := range t.Attr {
 				if a.Key == "class" && a.Val == "clearfix" {
-					wg.Wait()
 					return
 				}
 			}
@@ -160,8 +159,7 @@ func no_place(album *Album, z *html.Tokenizer, wg *sync.WaitGroup) {
 					}
 
 					// parse song
-					wg.Add(1)
-					go song.Parse(wg)
+					go song.Parse()
 				}
 			}
 		}
