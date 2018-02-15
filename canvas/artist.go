@@ -22,7 +22,7 @@ func initArtists() {
 				      name text not null,
 
 				      primary key (name))`); err != nil {
-		logger.Emerg("initializing artists")
+		fmt.Println("initializing artists")
 		log.Fatal("sqlite: ", err)
 	}
 }
@@ -35,7 +35,7 @@ func FetchLatestArtist() (*Artist, error) {
 
 	rows, err := db.Query("select name from artists order by name desc")
 	if err != nil {
-		logger.Debug(fmt.Sprintf("failed to get latest artist name %v", err))
+		fmt.Printf("failed to get latest artist name %v\n", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -44,10 +44,10 @@ func FetchLatestArtist() (*Artist, error) {
 	rows.Next()
 	err = rows.Scan(&name)
 	if err != nil {
-		logger.Err(fmt.Sprintf("failed to scan rows %v", err))
+		fmt.Printf("failed to scan rows %v\n", err)
 		return nil, err
 	}
-	logger.Info(fmt.Sprintf("got latest %s", name))
+	fmt.Printf("got latest %s\n", name)
 
 	return &Artist{
 		Name: name,
@@ -174,18 +174,18 @@ func (artist *Artist) put() {
 
 	stmt, err := tx.Prepare("insert or replace into artists (name) values (?)")
 	if err != nil {
-		logger.Err(fmt.Sprintf("preparing stmt %v for artist %v with err %v", stmt, artist, err))
+		fmt.Printf("preparing stmt %v for artist %v with err %v\n", stmt, artist, err)
 		return
 	}
 	defer stmt.Close()
 
 	if res, err := stmt.Exec(artist.Name); err != nil {
-		logger.Err(fmt.Sprintf("execing stmt %v for artist %v with res %v and err %v", stmt, artist, res, err))
+		fmt.Printf("execing stmt %v for artist %v with res %v and err %v\n", stmt, artist, res, err)
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		logger.Err(fmt.Sprintf("committing tx %v for artist %v with err %v", tx, artist, err))
+		fmt.Printf("committing tx %v for artist %v with err %v\n", tx, artist, err)
 		return
 	}
 }

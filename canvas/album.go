@@ -35,7 +35,7 @@ func (album *Album) Parse() bool {
 
 	root, b, err := parse(album.Url)
 	if err != nil {
-		logger.Err(fmt.Sprintf("parsing album url %s", album.Url))
+		fmt.Printf("parsing album url %s\n", album.Url)
 		return false
 	}
 	defer b.Close()
@@ -92,19 +92,19 @@ func (album *Album) put() {
 
 	stmt, err := tx.Prepare("insert or replace into albums (artist, name) values (?, ?)")
 	if err != nil {
-		logger.Err(fmt.Sprintf("preparing stmt %v for album %v with err %v", stmt, album, err))
+		fmt.Printf("preparing stmt %v for album %v with err %v\n", stmt, album, err)
 	}
 
 	_, err = stmt.Exec(album.Artist.Name, album.Name)
 	if err != nil {
-		logger.Err(fmt.Sprintf("execing stmt %v for album %v with err %v", stmt, album, err))
+		fmt.Printf("execing stmt %v for album %v with err %v\n", stmt, album, err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		logger.Err(fmt.Sprintf("committing tx %v for artist %v with err %v", tx, album, err))
+		fmt.Printf("committing tx %v for artist %v with err %v\n", tx, album, err)
 	}
 
 	if err := stmt.Close(); err != nil {
-		logger.Err(fmt.Sprintf("closing stmt %v for album %v with err %v", stmt, album, err))
+		fmt.Printf("closing stmt %v for album %v with err %v\n", stmt, album, err)
 	}
 }

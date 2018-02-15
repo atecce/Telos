@@ -19,7 +19,6 @@ import (
 
 type Investigator struct {
 	domain *url.URL
-	logger *syslog.Writer
 }
 
 func inAlphabet(char rune) bool {
@@ -36,12 +35,6 @@ func New() *Investigator {
 	investigator := new(Investigator)
 	investigator.domain, _ = url.Parse("http://www.lyrics.net")
 
-	syslogger, err := syslog.Dial("", "", syslog.LOG_USER, "investigations")
-	if err != nil {
-		log.Fatal("syslog:", err)
-	}
-	investigator.logger = syslogger
-
 	return investigator
 }
 
@@ -52,16 +45,16 @@ func (investigator *Investigator) Run() {
 	latest, err := canvas.FetchLatestArtist()
 	if err == nil {
 
-		investigator.logger.Info(fmt.Sprintf("got latest artist %s", latest))
+		fmt.Printf("got latest artist %s\n", latest)
 
 		first := rune(latest.Name[0])
-		investigator.logger.Info(fmt.Sprintf("got first letter %s", first))
+		fmt.Printf("got first letter %s\n", first)
 
 		if inAlphabet(first) {
 			pattern = "^[" + string(unicode.ToUpper(first)) + "-Z]$"
 		}
 	}
-	investigator.logger.Info(fmt.Sprintf("set pattern %s", pattern))
+	fmt.Printf("set pattern %s\n", pattern)
 
 	for _, c := range "0ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
 		if ok, err := regexp.MatchString(pattern, string(c)); ok {
@@ -69,7 +62,7 @@ func (investigator *Investigator) Run() {
 			u.Path = path.Join("artists", string(c), "99999")
 			investigator.parseArtists(*u)
 		} else if err != nil {
-			investigator.logger.Err("error matching alphabet pattern")
+			fmt.Printf("error matching alphabet pattern\n")
 		}
 	}
 }
@@ -79,7 +72,7 @@ func (investigator *Investigator) parseArtists(u url.URL) {
 	// set body
 	b, ok := rest.Get(u.String())
 	if !ok {
-		investigator.logger.Debug(fmt.Sprintf("failed getting artist url %v", u))
+		fmt.Printf("failed getting artist url %v\n", u)
 		return
 	}
 	defer b.Close()
@@ -87,7 +80,7 @@ func (investigator *Investigator) parseArtists(u url.URL) {
 	// parse page
 	root, err := html.Parse(b)
 	if err != nil {
-		investigator.logger.Emerg(err.Error())
+		fmt.Println(err.Error())
 	}
 
 	// find artist urls

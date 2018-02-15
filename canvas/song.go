@@ -42,14 +42,14 @@ func (song *Song) Parse() {
 
 	root, b, err := parse(song.Url)
 	if err != nil {
-		logger.Err(fmt.Sprintf("failed to parse song url %s", song.Url))
+		fmt.Printf("failed to parse song url %s\n", song.Url)
 		return
 	}
 	defer b.Close()
 
 	song.Lyrics, err = scrapeLyrics(root)
 	if err != nil {
-		logger.Err(fmt.Sprintf("%s at %s", err.Error(), song.Url))
+		fmt.Printf("%s at %s\n", err.Error(), song.Url)
 		return
 	}
 	song.put()
@@ -74,18 +74,18 @@ func (song *Song) put() {
 
 	stmt, err := tx.Prepare("insert or replace into songs (album, url, name, lyrics) values (?, ?, ?, ?)")
 	if err != nil {
-		logger.Err(fmt.Sprintf("failed preparing song at %s", song.Url))
+		fmt.Printf("failed preparing song at %s\n", song.Url)
 		return
 	}
 	defer stmt.Close()
 
 	_, err = stmt.Exec(song.Album.Name, song.Url, song.Name, song.Lyrics)
 	if err != nil {
-		logger.Err(fmt.Sprintf("failed execing song at %s", song.Url))
+		fmt.Printf("failed execing song at %s\n", song.Url)
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		logger.Err(fmt.Sprintf("failed comitting song at %s", song.Url))
+		fmt.Printf("failed comitting song at %s\n", song.Url)
 	}
 }
