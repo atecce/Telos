@@ -1,4 +1,4 @@
-package canvas
+package main
 
 import (
 	"database/sql"
