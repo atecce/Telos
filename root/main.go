@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	repoName   = "investigations"
+	repoName   = "letters"
 	branchName = "master"
 )
 
@@ -21,7 +21,7 @@ func main() {
 	}
 
 	if err := pachyderm.CreateRepo(repoName); err != nil {
-		log.Println("creating investigations:", err)
+		log.Println("creating repo:", err)
 	}
 
 	commit, err := pachyderm.StartCommit(repoName, branchName)
@@ -30,7 +30,7 @@ func main() {
 	}
 
 	if err := pachyderm.CreateBranch(repoName, branchName, commit.GetID(), nil); err != nil {
-		log.Println("creating master branch:", err)
+		log.Println("creating branch:", err)
 	}
 
 	branch, err := pachyderm.InspectBranch(repoName, branchName)
