@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"net/url"
+	"path"
 
 	"github.com/pachyderm/pachyderm/src/client"
 )
@@ -37,9 +39,20 @@ func main() {
 	}
 
 	head := branch.Head.GetID()
-	if err := pachyderm.PutFileURL(repoName, head, "root", "http://www.lyrics.net", false, true); err != nil {
-		log.Println("putting with head:", head)
-		log.Println("err:", err)
+
+	u, _ := url.Parse("http://www.lyrics.net")
+
+	for _, c := range "0ABCDEFGHIJKLMNOPQRSTUVWXYZ" {
+
+		char := string(c)
+		u.Path = path.Join("artists", char, "99999")
+
+		log.Println("putting file at path", u.Path)
+
+		if err := pachyderm.PutFileURL(repoName, head, char, u.String(), false, true); err != nil {
+			log.Println("putting with head:", head)
+			log.Println("err:", err)
+		}
 	}
 
 	if err := pachyderm.FinishCommit(repoName, commit.GetID()); err != nil {
