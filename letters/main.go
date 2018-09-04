@@ -8,8 +8,6 @@ import (
 	"github.com/pachyderm/pachyderm/src/client"
 )
 
-// TODO handle initial commit
-
 const (
 	repoName   = "letters"
 	branchName = "master"
@@ -31,16 +29,7 @@ func main() {
 		log.Println("starting commit:", err)
 	}
 
-	if err := pachyderm.CreateBranch(repoName, branchName, commit.GetID(), nil); err != nil {
-		log.Println("creating branch:", err)
-	}
-
-	branch, err := pachyderm.InspectBranch(repoName, branchName)
-	if err != nil {
-		log.Println("inspecting branch:", err)
-	}
-
-	head := branch.Head.GetID()
+	head := commit.GetID()
 
 	u, _ := url.Parse("http://www.lyrics.net")
 
@@ -55,6 +44,7 @@ func main() {
 			log.Println("putting with head:", head)
 			log.Println("err:", err)
 		}
+		println()
 	}
 
 	if err := pachyderm.FinishCommit(repoName, commit.GetID()); err != nil {
