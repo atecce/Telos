@@ -8,6 +8,8 @@ import (
 	"github.com/pachyderm/pachyderm/src/client"
 )
 
+// TODO handle initial commit
+
 const (
 	repoName   = "letters"
 	branchName = "master"
