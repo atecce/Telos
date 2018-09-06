@@ -1,0 +1,15 @@
+{
+    "pipeline": {
+        "name": "artists"
+    },
+    "input": {
+        "atom": {
+            "glob": "/*",
+            "repo": "letters"
+        }
+    },
+    "transform": {
+        "cmd": [ "/home/artists" ],
+        "image": "atec/artists"
+    }
+}
