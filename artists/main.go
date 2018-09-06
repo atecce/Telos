@@ -12,7 +12,7 @@ import (
 
 func main() {
 
-	if walkErr := filepath.Walk("/pfs/letters", func(path string, info os.FileInfo, err error) error {
+	if walkErr := filepath.Walk("/pfs/letters/", func(path string, info os.FileInfo, err error) error {
 
 		if info.IsDir() {
 			return nil
