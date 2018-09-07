@@ -9,12 +9,12 @@ import (
 	"github.com/pachyderm/pachyderm/src/client"
 )
 
-const (
-	repoName   = "letters"
-	branchName = "master"
-)
-
 func main() {
+
+	const (
+		repoName   = "letters"
+		branchName = "master"
+	)
 
 	var wg sync.WaitGroup
 
