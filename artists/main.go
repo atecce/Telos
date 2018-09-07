@@ -1,14 +1,15 @@
 package main
 
 import (
+	"io"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/pachyderm/pachyderm/src/client"
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
 )
@@ -18,22 +19,6 @@ const repoName = "artists"
 func main() {
 
 	u, _ := url.Parse("http://www.lyrics.net")
-
-	pachyderm, err := client.NewInCluster()
-	if err != nil {
-		log.Fatal("getting client", err)
-	}
-
-	if err := pachyderm.CreateRepo(repoName); err != nil {
-		log.Println("creating repo:", err)
-	}
-
-	commit, err := pachyderm.StartCommit(repoName, "master")
-	if err != nil {
-		log.Fatal("starting commit", err)
-	}
-
-	head := commit.GetID()
 
 	if walkErr := filepath.Walk("/pfs/letters/", func(path string, info os.FileInfo, err error) error {
 
@@ -70,8 +55,21 @@ func main() {
 
 				url := u.String()
 
-				if err := pachyderm.PutFileURL(repoName, head, strings.Split(u.Path, "/")[1], url, false, true); err != nil {
-					log.Println("putting file with url:", url)
+				res, err := http.Get(url)
+				if err != nil {
+					log.Println("getting url:", err)
+				}
+
+				outPath := filepath.Join("/", "pfs", "out", strings.Split(u.Path, "/")[1])
+
+				f, err := os.Create(outPath)
+				if err != nil {
+					log.Println("creating file at path", outPath)
+				}
+
+				_, err = io.Copy(f, res.Body)
+				if err != nil {
+					log.Println("copying res", err)
 				}
 			}
 		}
@@ -81,6 +79,4 @@ func main() {
 	}); walkErr != nil {
 		log.Println("walking:", walkErr)
 	}
-
-	pachyderm.FinishCommit(repoName, head)
 }
