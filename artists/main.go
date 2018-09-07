@@ -17,7 +17,7 @@ import (
 
 func main() {
 
-	sem := make(chan struct{}, 100)
+	sem := make(chan struct{}, 1000)
 	var wg sync.WaitGroup
 
 	if walkErr := filepath.Walk("/pfs/letters/", func(path string, info os.FileInfo, err error) error {
@@ -74,6 +74,7 @@ func main() {
 					if err != nil {
 						log.Println("creating file at path", fPath)
 					}
+					defer f.Close()
 
 					_, err = io.Copy(f, res.Body)
 					if err != nil {
