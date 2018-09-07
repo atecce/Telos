@@ -57,11 +57,11 @@ func main() {
 					log.Println("getting url:", err)
 				}
 
-				outPath := filepath.Join("/", "pfs", "out", strings.Split(u.Path, "/")[1])
+				fPath := filepath.Join("/", "pfs", "out", strings.Split(u.Path, "/")[1])
 
-				f, err := os.Create(outPath)
+				f, err := os.Create(fPath)
 				if err != nil {
-					log.Println("creating file at path", outPath)
+					log.Println("creating file at path", fPath)
 				}
 
 				_, err = io.Copy(f, res.Body)
