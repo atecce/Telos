@@ -69,6 +69,7 @@ func main() {
 					if err != nil {
 						log.Println("getting url:", err)
 					}
+					defer res.Body.Close()
 
 					f, err := os.Create(fPath)
 					if err != nil {
