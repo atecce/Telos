@@ -14,8 +14,6 @@ import (
 	"golang.org/x/net/html"
 )
 
-const repoName = "artists"
-
 func main() {
 
 	u, _ := url.Parse("http://www.lyrics.net")
