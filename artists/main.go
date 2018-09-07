@@ -45,15 +45,14 @@ func main() {
 			if n.Parent != nil {
 				return n.Parent.Data == "strong" && n.Data == "a" && isArtist
 			}
+
 			return false
 		}) {
 			if link.FirstChild != nil {
 
 				u.Path = scrape.Attr(link, "href")
 
-				url := u.String()
-
-				res, err := http.Get(url)
+				res, err := http.Get(u.String())
 				if err != nil {
 					log.Println("getting url:", err)
 				}
