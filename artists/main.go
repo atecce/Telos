@@ -15,52 +15,10 @@ import (
 	"golang.org/x/net/html"
 )
 
-type job struct {
-	path string
-}
-
-func (j job) run() error {
-
-	u, _ := url.Parse("http://www.lyrics.net")
-
-	u.Path = j.path
-	fPath := filepath.Join("/", "pfs", "out", strings.Split(j.path, "/")[1])
-
-	url := u.String()
-	log.Println("GET", url)
-	res, err := http.Get(url)
-	if err != nil {
-		log.Println("getting url:", err)
-	}
-
-	f, err := os.Create(fPath)
-	if err != nil {
-		log.Println("creating file at path", fPath)
-	}
-
-	_, err = io.Copy(f, res.Body)
-	if err != nil {
-		log.Println("copying res", err)
-	}
-
-	return nil
-}
-
 func main() {
 
-	pool := make(chan job, 100)
-
+	sem := make(chan struct{}, 100)
 	var wg sync.WaitGroup
-
-	go func() {
-		for {
-			job := <-pool
-			if err := job.run(); err != nil {
-				log.Println("error running job", err)
-			}
-			wg.Done()
-		}
-	}()
 
 	if walkErr := filepath.Walk("/pfs/letters/", func(path string, info os.FileInfo, err error) error {
 
@@ -94,8 +52,38 @@ func main() {
 		}) {
 			if link.FirstChild != nil {
 
-				pool <- job{scrape.Attr(link, "href")}
 				wg.Add(1)
+				sem <- struct{}{}
+
+				go func(path string) {
+					defer wg.Done()
+
+					u, _ := url.Parse("http://www.lyrics.net")
+
+					u.Path = path
+					fPath := filepath.Join("/", "pfs", "out", strings.Split(path, "/")[1])
+
+					url := u.String()
+					log.Println("GET", url)
+					res, err := http.Get(url)
+					if err != nil {
+						log.Println("getting url:", err)
+					}
+
+					f, err := os.Create(fPath)
+					if err != nil {
+						log.Println("creating file at path", fPath)
+					}
+
+					_, err = io.Copy(f, res.Body)
+					if err != nil {
+						log.Println("copying res", err)
+					}
+
+					<-sem
+
+				}(scrape.Attr(link, "href"))
+
 			}
 		}
 
