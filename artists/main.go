@@ -1,16 +1,14 @@
 package main
 
 import (
-	"io"
 	"log"
-	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 
+	"github.com/atecce/investigations/common"
 	"github.com/yhat/scrape"
 	"golang.org/x/net/html"
 )
@@ -59,29 +57,7 @@ func main() {
 				go func(path string) {
 					defer wg.Done()
 
-					u, _ := url.Parse("http://www.lyrics.net")
-
-					u.Path = path
-					fPath := filepath.Join("/", "pfs", "out", strings.Split(path, "/")[1])
-
-					url := u.String()
-					log.Println("GET", url)
-					res, err := http.Get(url)
-					if err != nil {
-						log.Println("getting url:", err)
-					}
-					defer res.Body.Close()
-
-					f, err := os.Create(fPath)
-					if err != nil {
-						log.Println("creating file at path", fPath)
-					}
-					defer f.Close()
-
-					_, err = io.Copy(f, res.Body)
-					if err != nil {
-						log.Println("copying res", err)
-					}
+					common.PutFile(strings.Split(path, "/")[1], path)
 
 					<-sem
 
