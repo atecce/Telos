@@ -4,12 +4,16 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/atecce/investigations/common"
 	"golang.org/x/net/html"
 )
 
 func main() {
+
+	sem := make(chan struct{}, 1000)
+	var wg sync.WaitGroup
 
 	if err := filepath.Walk("/pfs/artists/", func(path string, info os.FileInfo, err error) error {
 
@@ -51,7 +55,17 @@ func main() {
 									// album titles are the next token
 									z.Next()
 
-									common.PutFile(z.Token().Data, attr.Val)
+									wg.Add(1)
+									sem <- struct{}{}
+
+									go func(fName, uPath string) {
+										defer wg.Done()
+
+										common.PutFile(fName, uPath)
+
+										<-sem
+
+									}(z.Token().Data, attr.Val)
 
 									// TODO maybe account for dorothy somehow?
 								}
