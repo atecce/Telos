@@ -30,6 +30,7 @@ func main() {
 		if err != nil {
 			return err
 		}
+		defer f.Close()
 
 		root, err := html.Parse(f)
 		if err != nil {
