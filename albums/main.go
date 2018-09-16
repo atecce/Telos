@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -11,6 +11,8 @@ import (
 )
 
 func main() {
+
+	logger := common.NewLogger()
 
 	sem := make(chan struct{}, 1000)
 	var wg sync.WaitGroup
@@ -61,7 +63,7 @@ func main() {
 									go func(fName, uPath string) {
 										defer wg.Done()
 
-										common.PutFile(fName, uPath)
+										common.PutFile(fName, uPath, logger)
 
 										<-sem
 
@@ -76,6 +78,6 @@ func main() {
 			}
 		}
 	}); err != nil {
-		log.Println("walking", err)
+		logger.Err(fmt.Sprintf("walking: %s\n", err.Error()))
 	}
 }

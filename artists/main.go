@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -14,6 +14,8 @@ import (
 )
 
 func main() {
+
+	logger := common.NewLogger()
 
 	sem := make(chan struct{}, 1000)
 	var wg sync.WaitGroup
@@ -39,7 +41,7 @@ func main() {
 
 			isArtist, err := regexp.MatchString("^artist/*", scrape.Attr(n, "href"))
 			if err != nil {
-				log.Println("matching artist link", err)
+				logger.Err(fmt.Sprintf("matching artist link: %s\n", err.Error()))
 				return false
 			}
 
@@ -57,7 +59,7 @@ func main() {
 				go func(path string) {
 					defer wg.Done()
 
-					common.PutFile(strings.Split(path, "/")[1], path)
+					common.PutFile(strings.Split(path, "/")[1], path, logger)
 
 					<-sem
 
@@ -69,7 +71,7 @@ func main() {
 		return nil
 
 	}); walkErr != nil {
-		log.Println("walking:", walkErr)
+		logger.Info(fmt.Sprintf("walking: %s\n", walkErr.Error()))
 	}
 
 	wg.Wait()
